@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">TrapShift</string>
+    <string name="title_activity_main">TrapShift</string>
+    <string name="package_name">com.trapshift.app</string>
+    <string name="custom_url_scheme">com.trapshift.app</string>
+
+    <!--
+      Google AdMob App ID.
+      This is the OFFICIAL GOOGLE TEST App ID (safe to ship, always returns test ads,
+      never earns/risks real revenue). Replace with your real AdMob App ID
+      (from admob.google.com > App > App settings) before a production Play Store release,
+      and flip USE_TEST_ADS to false in src/game/ads.ts at the same time.
+    -->
+    <string name="admob_app_id">ca-app-pub-3940256099942544~3347511713</string>
+</resources>
