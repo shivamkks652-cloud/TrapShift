@@ -89,8 +89,12 @@ lint/tmp/
 # Android Profiling
 *.hprof
 
-# Cordova plugins for Capacitor
-capacitor-cordova-android-plugins
+# Cordova plugins for Capacitor: normally gitignored since `npx cap sync`
+# regenerates it, but this repo intentionally commits it (see git history)
+# so a fresh clone opens directly in Android Studio even if `cap sync`
+# hasn't been run yet. It's still safe to regenerate at any time with
+# `npx cap sync android` — the project uses no real Cordova plugins, so
+# this folder's contents are static Capacitor scaffolding.
 
 # Copied web assets
 app/src/main/assets/public

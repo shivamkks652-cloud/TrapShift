@@ -1,0 +1,33 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+*.tsbuildinfo
+
+# Env / local
+.env
+.env.local
+
+# OS
+.DS_Store
+
+# Android
+android/build/
+android/app/build/
+android/.gradle/
+android/local.properties
+android/app/src/main/assets/public/
+android/app/src/main/assets/capacitor.config.json
+android/app/src/main/assets/capacitor.plugins.json
+android/app/src/main/res/xml/config.xml
+*.apk
+*.aab
+*.aar
+*.jks
+*.keystore
+android/keystore.properties
+
+# IDE
+.idea/
+*.iml
