@@ -7,7 +7,11 @@ export const TILE = 48; // logical pixel size of one grid tile
 
 // Terrain tile characters used inside level ASCII maps.
 // '.' empty, '#' solid ground, 'S' spike hazard, '~' fake platform (looks solid, isn't)
-export type TerrainChar = "." | "#" | "S" | "~";
+// 'I' ice/slippery ground (solid but low friction)
+// 'B' bounce pad (solid but launches player upward on contact)
+// '>' / '<' speed pad (solid, boosts player velocity in the arrow's direction on contact)
+// 'L' lava/fire trap (solid-looking but instantly lethal, glows)
+export type TerrainChar = "." | "#" | "S" | "~" | "I" | "B" | ">" | "<" | "L";
 
 export type TrapType =
   | "movingWall"

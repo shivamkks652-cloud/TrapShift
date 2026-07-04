@@ -1,13 +1,18 @@
 import {
   AIR_CONTROL,
+  BOUNCE_PAD_VELOCITY,
   COYOTE_TIME,
   GRAVITY,
+  ICE_FRICTION_MULT,
   JUMP_BUFFER_TIME,
+  JUMP_CUT_MULT,
   JUMP_VELOCITY,
   MAX_FALL_SPEED,
   MAX_RUN_SPEED,
+  MIN_JUMP_VELOCITY,
   MOVE_ACCEL,
   MOVE_DECEL,
+  SPEED_PAD_VELOCITY,
 } from "./constants";
 import { sfx, gateHumStart, gateHumStop, gravityHumStart, gravityHumStop } from "./audio";
 import { vibrate } from "./haptics";
@@ -94,6 +99,11 @@ export class GameEngine {
   gravityDir: 1 | -1 = 1;
   coyoteTimer = 0;
   jumpBufferTimer = 0;
+  jumpHoldReleased = true; // internal edge tracker for variable jump height
+  jumpingUp = false; // true while ascending from a jump (used to gate jump-cut)
+  bouncedPads = new Set<string>(); // per-cycle debounce so a single frame doesn't re-trigger
+  speedPads = new Set<string>();
+  keysCollected = new Set<string>();
   wasOnGround = false;
   time = 0;
   status: "playing" | "dead" | "won" = "playing";
@@ -177,7 +187,9 @@ export class GameEngine {
 
   private isSolidTerrain(tx: number, ty: number): boolean {
     const c = this.tileAt(tx, ty);
-    return c === "#";
+    // Physical solids: plain ground, ice, bounce pad, and both speed-pad arrows.
+    // Ice acts like normal ground for collision — the friction change is handled elsewhere.
+    return c === "#" || c === "I" || c === "B" || c === ">" || c === "<";
   }
 
   private isFakeTerrain(tx: number, ty: number): boolean {
@@ -185,7 +197,20 @@ export class GameEngine {
   }
 
   private isHazardTerrain(tx: number, ty: number): boolean {
-    return this.tileAt(tx, ty) === "S";
+    // Spikes and lava/fire tiles are instantly lethal on any touch.
+    const c = this.tileAt(tx, ty);
+    return c === "S" || c === "L";
+  }
+
+  private isBouncePad(tx: number, ty: number): boolean {
+    return this.tileAt(tx, ty) === "B";
+  }
+
+  private speedPadDir(tx: number, ty: number): 1 | -1 | 0 {
+    const c = this.tileAt(tx, ty);
+    if (c === ">") return 1;
+    if (c === "<") return -1;
+    return 0;
   }
 
   private inZone(zones: { x: number; y: number; w: number; h: number }[] | undefined, px: number, py: number): boolean {
@@ -327,10 +352,19 @@ export class GameEngine {
       [left, right] = [right, left];
     }
 
+    // Terrain-modifier awareness: does the player's feet-tile match ice/speed/bounce/spike surfaces?
+    // These are pure terrain reads (single-tile lookups just below the player rect).
+    const feetTx = Math.floor((this.player.x + this.player.w / 2) / TILE);
+    const feetTy = Math.floor((this.player.y + this.player.h + 0.5) / TILE);
+    const feetTile = this.tileAt(feetTx, feetTy);
+    const onIce = this.player.onGround && feetTile === "I";
+
     // horizontal movement
     const targetDir = (right ? 1 : 0) - (left ? 1 : 0);
-    const accel = (this.player.onGround ? MOVE_ACCEL : MOVE_ACCEL * AIR_CONTROL) * this.sensitivity;
-    const decel = (this.player.onGround ? MOVE_DECEL : MOVE_DECEL * AIR_CONTROL) * this.sensitivity;
+    const groundAccel = onIce ? MOVE_ACCEL * 0.55 : MOVE_ACCEL;
+    const groundDecel = onIce ? MOVE_DECEL * ICE_FRICTION_MULT : MOVE_DECEL;
+    const accel = (this.player.onGround ? groundAccel : MOVE_ACCEL * AIR_CONTROL) * this.sensitivity;
+    const decel = (this.player.onGround ? groundDecel : MOVE_DECEL * AIR_CONTROL) * this.sensitivity;
     if (targetDir !== 0) {
       this.player.vx += targetDir * accel * dt;
       this.player.vx = Math.max(-MAX_RUN_SPEED, Math.min(MAX_RUN_SPEED, this.player.vx));
@@ -342,7 +376,10 @@ export class GameEngine {
     }
 
     // jump buffering + coyote time
-    if (input.jumpPressed) this.jumpBufferTimer = JUMP_BUFFER_TIME;
+    if (input.jumpPressed) {
+      this.jumpBufferTimer = JUMP_BUFFER_TIME;
+      this.jumpHoldReleased = false;
+    }
     else this.jumpBufferTimer = Math.max(0, this.jumpBufferTimer - dt);
 
     if (this.player.onGround) this.coyoteTimer = COYOTE_TIME;
@@ -353,6 +390,7 @@ export class GameEngine {
       this.jumpBufferTimer = 0;
       this.coyoteTimer = 0;
       this.player.onGround = false;
+      this.jumpingUp = true;
       sfx.jump();
       this.spawnParticles(
         this.player.x + this.player.w / 2,
@@ -362,6 +400,29 @@ export class GameEngine {
         150,
         Math.PI,
       );
+    }
+
+    // Variable jump height — if the player releases jump while still ascending, cut the
+    // upward velocity so a quick tap produces a short hop and a hold produces a full jump.
+    // Only applied on the release edge (jumpHeld transitions to false), and only while
+    // still moving upward relative to current gravity direction.
+    if (!input.jumpHeld && !this.jumpHoldReleased) {
+      this.jumpHoldReleased = true;
+      if (this.jumpingUp) {
+        const ascending = this.gravityDir === 1 ? this.player.vy < 0 : this.player.vy > 0;
+        if (ascending) {
+          const minVy = -MIN_JUMP_VELOCITY * this.gravityDir;
+          if (this.gravityDir === 1) {
+            this.player.vy = Math.max(this.player.vy * JUMP_CUT_MULT, minVy);
+          } else {
+            this.player.vy = Math.min(this.player.vy * JUMP_CUT_MULT, minVy);
+          }
+        }
+      }
+    }
+    // Reset jumpingUp once we're past the apex or grounded.
+    if (this.player.onGround || (this.gravityDir === 1 ? this.player.vy > 0 : this.player.vy < 0)) {
+      this.jumpingUp = false;
     }
 
     // gravity (frozen zones halt hazards but not player gravity — player still must navigate)
@@ -390,6 +451,88 @@ export class GameEngine {
         );
       }
     }
+
+    // ── Terrain-pad triggers ──────────────────────────────────────────────
+    // Bounce pad: on landing on a 'B' tile, launch the player upward with a
+    // strong pre-set velocity. Only fires the frame we actually contact it,
+    // and we set jumpingUp so variable-jump-cut can still throttle a released
+    // hold on the way up (feels intentional, not glitchy).
+    if (this.player.onGround) {
+      const footTx = Math.floor((this.player.x + this.player.w / 2) / TILE);
+      const footTy = Math.floor(
+        this.gravityDir === 1
+          ? (this.player.y + this.player.h + 0.5) / TILE
+          : (this.player.y - 0.5) / TILE
+      );
+      if (this.isBouncePad(footTx, footTy)) {
+        this.player.vy = -BOUNCE_PAD_VELOCITY * this.gravityDir;
+        this.player.onGround = false;
+        this.jumpingUp = true;
+        this.jumpHoldReleased = true; // player didn't press jump; no variable cut window
+        sfx.jump();
+        this.spawnParticles(
+          this.player.x + this.player.w / 2,
+          footTy * TILE + TILE * 0.5,
+          14,
+          "#ffe45c",
+          260,
+          Math.PI,
+        );
+        this.squash = -0.6;
+        vibrate(30);
+        this.emit("bounce");
+      }
+    }
+
+    // Speed pad: on any contact with the player rect (feet or mid-body), snap
+    // horizontal velocity to the pad's boost speed in its arrow direction.
+    // Cheap linear scan of pad tiles under the player rect — plenty for the
+    // small worlds we ship.
+    {
+      const rectMinTx = Math.floor(this.player.x / TILE);
+      const rectMaxTx = Math.floor((this.player.x + this.player.w) / TILE);
+      const rectMinTy = Math.floor(this.player.y / TILE);
+      const rectMaxTy = Math.floor((this.player.y + this.player.h) / TILE);
+      for (let tx = rectMinTx; tx <= rectMaxTx; tx++) {
+        for (let ty = rectMinTy; ty <= rectMaxTy; ty++) {
+          const dir = this.speedPadDir(tx, ty);
+          if (dir === 0) continue;
+          const boost = SPEED_PAD_VELOCITY * dir;
+          if ((dir === 1 && this.player.vx < boost) || (dir === -1 && this.player.vx > boost)) {
+            this.player.vx = boost;
+            this.player.facing = dir;
+          }
+          const padKey = `sp:${tx}:${ty}`;
+          if (!this.speedPads.has(padKey)) {
+            this.speedPads.add(padKey);
+            sfx.portal();
+            this.spawnParticles(
+              tx * TILE + TILE / 2,
+              ty * TILE + TILE * 0.5,
+              10,
+              "#5cffe4",
+              240,
+              Math.PI * 0.4,
+            );
+            this.emit("speedPad");
+          }
+        }
+      }
+      // Ambient cleanup: as the player moves away from a triggered pad, drop the
+      // debounce so re-entering later still plays the whoosh.
+      if (this.speedPads.size > 0) {
+        for (const key of Array.from(this.speedPads)) {
+          const [, tx, ty] = key.split(":").map(Number);
+          if (
+            tx < rectMinTx - 1 || tx > rectMaxTx + 1 ||
+            ty < rectMinTy - 1 || ty > rectMaxTy + 1
+          ) {
+            this.speedPads.delete(key);
+          }
+        }
+      }
+    }
+    // ──────────────────────────────────────────────────────────────────────
 
     // update dynamic hazards
     this.updateMovingHazards(dt);

@@ -149,6 +149,14 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
         drawNeonSpikes(ctx, x, y, dangerColor, frame);
       } else if (c === "~") {
         drawFakePlatform(ctx, x, y, tx, ty, worldAccent, dangerColor, engine, frame);
+      } else if (c === "I") {
+        drawIceTile(ctx, x, y, frame);
+      } else if (c === "B") {
+        drawBouncePad(ctx, x, y, frame);
+      } else if (c === ">" || c === "<") {
+        drawSpeedPad(ctx, x, y, c === ">" ? 1 : -1, frame);
+      } else if (c === "L") {
+        drawLavaTile(ctx, x, y, frame);
       }
     }
   }
@@ -956,4 +964,102 @@ function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: numbe
   ctx.arcTo(x, y + h, x, y, r);
   ctx.arcTo(x, y, x + w, y, r);
   ctx.closePath();
+}
+
+// ── New terrain-pad renderers ────────────────────────────────────────────
+// Each is a small, cheap canvas-only draw call so we hold 60fps on low-end
+// devices. No image assets, no per-frame allocations beyond gradient handles.
+
+function drawIceTile(ctx: CanvasRenderingContext2D, x: number, y: number, frame: number) {
+  const grad = ctx.createLinearGradient(x, y, x, y + TILE);
+  grad.addColorStop(0, "#a8f0ff");
+  grad.addColorStop(1, "#4aa8d8");
+  ctx.fillStyle = grad;
+  ctx.fillRect(x, y, TILE, TILE);
+  ctx.strokeStyle = "#ffffff88";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
+  // subtle sparkle so ice reads as slippery
+  ctx.fillStyle = "#ffffffcc";
+  const s1 = ((frame * 0.4) % TILE);
+  ctx.fillRect(x + s1, y + 6, 2, 2);
+  ctx.fillRect(x + TILE - s1 - 2, y + TILE - 8, 2, 2);
+}
+
+function drawBouncePad(ctx: CanvasRenderingContext2D, x: number, y: number, frame: number) {
+  // Springy yellow pad — base is dark, top surface pulses to telegraph "step here"
+  const grad = ctx.createLinearGradient(x, y, x, y + TILE);
+  grad.addColorStop(0, "#3a2a05");
+  grad.addColorStop(1, "#1a1502");
+  ctx.fillStyle = grad;
+  ctx.fillRect(x, y, TILE, TILE);
+  const pulse = 0.55 + 0.45 * Math.abs(Math.sin(frame / 20));
+  ctx.fillStyle = `rgba(255, 220, 70, ${pulse})`;
+  roundRect(ctx, x + 4, y + 4, TILE - 8, TILE * 0.32, 8);
+  ctx.fill();
+  // spring lines
+  ctx.strokeStyle = "#ffe45c";
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 3; i++) {
+    const yy = y + TILE * (0.45 + i * 0.14);
+    ctx.beginPath();
+    ctx.moveTo(x + 8, yy);
+    ctx.lineTo(x + TILE - 8, yy);
+    ctx.stroke();
+  }
+}
+
+function drawSpeedPad(ctx: CanvasRenderingContext2D, x: number, y: number, dir: 1 | -1, frame: number) {
+  const grad = ctx.createLinearGradient(x, y, x, y + TILE);
+  grad.addColorStop(0, "#052a2a");
+  grad.addColorStop(1, "#04151f");
+  ctx.fillStyle = grad;
+  ctx.fillRect(x, y, TILE, TILE);
+  ctx.strokeStyle = "#5cffe488";
+  ctx.lineWidth = 2;
+  ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
+  // Scrolling chevrons pointing in dir
+  const chevronCount = 3;
+  ctx.save();
+  ctx.translate(x + TILE / 2, y + TILE / 2);
+  const scroll = (frame * 0.9) % (TILE / chevronCount);
+  for (let i = -1; i <= chevronCount; i++) {
+    const cx = dir * (i * (TILE / chevronCount) - TILE / 2 + scroll * dir);
+    const alpha = 0.55 - Math.min(0.55, Math.abs(cx) / TILE);
+    ctx.fillStyle = `rgba(92,255,228,${alpha.toFixed(3)})`;
+    ctx.beginPath();
+    ctx.moveTo(cx - 6 * dir, -8);
+    ctx.lineTo(cx + 4 * dir, 0);
+    ctx.lineTo(cx - 6 * dir, 8);
+    ctx.lineTo(cx - 2 * dir, 0);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+function drawLavaTile(ctx: CanvasRenderingContext2D, x: number, y: number, frame: number) {
+  const grad = ctx.createLinearGradient(x, y, x, y + TILE);
+  grad.addColorStop(0, "#3a0505");
+  grad.addColorStop(1, "#150202");
+  ctx.fillStyle = grad;
+  ctx.fillRect(x, y, TILE, TILE);
+  const wave = Math.sin(frame / 12) * 3;
+  const grad2 = ctx.createLinearGradient(x, y + 4, x, y + 20);
+  grad2.addColorStop(0, "#ff6a3d");
+  grad2.addColorStop(1, "#ffb23dcc");
+  ctx.fillStyle = grad2;
+  ctx.beginPath();
+  ctx.moveTo(x, y + 12 + wave);
+  ctx.quadraticCurveTo(x + TILE / 4, y + 6, x + TILE / 2, y + 12 - wave);
+  ctx.quadraticCurveTo(x + (3 * TILE) / 4, y + 18, x + TILE, y + 12 + wave);
+  ctx.lineTo(x + TILE, y + TILE);
+  ctx.lineTo(x, y + TILE);
+  ctx.closePath();
+  ctx.fill();
+  // ember spec
+  ctx.fillStyle = "#ffe45c";
+  const bx = (frame * 0.5) % TILE;
+  ctx.fillRect(x + bx, y + 8, 1, 1);
+  ctx.fillRect(x + TILE - bx, y + 16, 1, 1);
 }
