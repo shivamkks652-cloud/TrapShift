@@ -226,6 +226,16 @@ function startHum(freq: number, gain: number, type: OscillatorType = "sawtooth")
 
 export function gateHumStart(id: string, electric: boolean) {
   if (muted || gateHums.has(id)) return;
+  // Cap total concurrent gate hums to keep the WebAudio oscillator/filter count
+  // bounded on low-end Android (each hum = osc + filter + gain). When over
+  // capacity, fade the oldest hum (Map iteration is insertion-ordered).
+  const MAX_GATE_HUMS = 4;
+  while (gateHums.size >= MAX_GATE_HUMS) {
+    const oldestId = gateHums.keys().next().value;
+    if (oldestId === undefined) break;
+    gateHums.get(oldestId)?.stop();
+    gateHums.delete(oldestId);
+  }
   gateHums.set(id, startHum(electric ? 3800 : 2600, 0.03, electric ? "square" : "sawtooth"));
 }
 
