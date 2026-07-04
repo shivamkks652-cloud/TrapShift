@@ -279,7 +279,10 @@ export function startMusic(world: number) {
   const bass = c.createOscillator();
   bass.type = timbre.bassType;
   const bassGain = c.createGain();
-  bassGain.gain.value = 0.12;
+  // Ramp bass volume from 0 to target over 25ms so the drone doesn't start
+  // with a hard click / DC-pop when startMusic() is called on world entry.
+  bassGain.gain.setValueAtTime(0, c.currentTime);
+  bassGain.gain.linearRampToValueAtTime(0.12, c.currentTime + 0.025);
   bass.connect(bassGain);
   bassGain.connect(musicGain!);
   bass.frequency.value = scale[0] / 2;
