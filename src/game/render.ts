@@ -2,7 +2,7 @@ import type { GameEngine } from "./engine";
 import { classifyMovingWall } from "./engine";
 import { TILE } from "./types";
 import { SKINS } from "./storage";
-import { fxTick, getSmoothedCamX, drawTrapHalos, updateAndDrawShockwaves } from "./renderFx";
+import { fxTick, getSmoothedCamX, drawTrapHalos, updateAndDrawShockwaves, updateAndDrawAmbientDust } from "./renderFx";
 import playerSpriteUrl from "@/assets/player-sprite.png";
 
 const playerSprite = new Image();
@@ -127,6 +127,15 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
     ctx.lineTo(x, height);
     ctx.stroke();
   }
+
+  // Ambient dust motes (Fx layer) — screen-space, drawn BEFORE the world-space
+  // translate so they float independently of level scroll with subtle parallax.
+  updateAndDrawAmbientDust(ctx, engine, fxDt, {
+    width,
+    height,
+    camX,
+    accent: worldAccent,
+  });
 
   ctx.translate(-camX + shakeX, -camY + shakeY);
 

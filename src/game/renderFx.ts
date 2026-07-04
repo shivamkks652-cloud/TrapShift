@@ -16,6 +16,17 @@ interface Shockwave {
   maxT: number;
 }
 
+interface DustMote {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  life: number;
+  maxLife: number;
+  size: number;
+  z: number; // depth 0..1 (near..far) — controls parallax and alpha
+}
+
 interface FxState {
   // camera follow lerp
   smoothedCamX: number | null;
@@ -24,6 +35,9 @@ interface FxState {
   // death-shockwave state — spawns once on rising edge of engine.status==='dead'
   wasDead: boolean;
   shockwaves: Shockwave[];
+  // ambient dust motes drifting in screen-space with camera-based parallax
+  dust: DustMote[];
+  dustSpawnAccum: number;
 }
 
 const stateMap = new WeakMap<GameEngine, FxState>();
@@ -31,7 +45,14 @@ const stateMap = new WeakMap<GameEngine, FxState>();
 function getState(engine: GameEngine): FxState {
   let s = stateMap.get(engine);
   if (!s) {
-    s = { smoothedCamX: null, lastNow: 0, wasDead: false, shockwaves: [] };
+    s = {
+      smoothedCamX: null,
+      lastNow: 0,
+      wasDead: false,
+      shockwaves: [],
+      dust: [],
+      dustSpawnAccum: 0,
+    };
     stateMap.set(engine, s);
   }
   return s;
@@ -254,6 +275,75 @@ export function updateAndDrawShockwaves(
     ctx.arc(w.x, w.y, rOuter, 0, Math.PI * 2);
     ctx.arc(w.x, w.y, rInner, 0, Math.PI * 2, true);
     ctx.fill("evenodd");
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+
+/**
+ * Ambient background dust motes — small drifting sparkles in screen-space with
+ * subtle camera-based horizontal parallax. Purely decorative, quality-capped.
+ *
+ * Draw in SCREEN-SPACE, after the parallax grid but BEFORE the world-space
+ * `ctx.translate(-camX, ...)`, so motes don't scroll 1:1 with the level.
+ *
+ * @param dt   frame delta from fxTick()
+ * @param opts pass width/height + optional camX for parallax offset
+ */
+export function updateAndDrawAmbientDust(
+  ctx: CanvasRenderingContext2D,
+  engine: GameEngine,
+  dt: number,
+  opts: { width: number; height: number; camX: number; accent: string },
+) {
+  const s = getState(engine);
+  const MAX_MOTES = 32;
+  const SPAWN_PER_SEC = 8;
+
+  // Spawn budget over time (dt-integrated so it's frame-rate independent).
+  s.dustSpawnAccum += dt * SPAWN_PER_SEC;
+  while (s.dustSpawnAccum >= 1 && s.dust.length < MAX_MOTES) {
+    s.dustSpawnAccum -= 1;
+    const z = Math.random();
+    const life = 6 + Math.random() * 8;
+    s.dust.push({
+      x: Math.random() * opts.width,
+      y: Math.random() * opts.height,
+      vx: (Math.random() * 8 - 4) * (0.35 + z * 0.65),
+      vy: (Math.random() * 6 - 3) * (0.35 + z * 0.65) - 2,
+      life,
+      maxLife: life,
+      size: 0.8 + z * 1.6,
+      z,
+    });
+  }
+  if (s.dustSpawnAccum > 3) s.dustSpawnAccum = 3;
+
+  if (s.dust.length === 0) return;
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  const parallaxX = -opts.camX * 0.15;
+  for (let i = s.dust.length - 1; i >= 0; i--) {
+    const d = s.dust[i];
+    d.x += d.vx * dt;
+    d.y += d.vy * dt;
+    d.life -= dt;
+    if (d.life <= 0 || d.x < -20 || d.x > opts.width + 20 || d.y < -20 || d.y > opts.height + 20) {
+      s.dust.splice(i, 1);
+      continue;
+    }
+    // twinkle: alpha peaks mid-life
+    const p = d.life / d.maxLife;
+    const twinkle = Math.sin(p * Math.PI);
+    const alpha = twinkle * (0.25 + d.z * 0.35);
+    const drawX = d.x + parallaxX * (0.3 + d.z * 0.7);
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = opts.accent;
+    ctx.beginPath();
+    ctx.arc(drawX, d.y, d.size, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.restore();
   ctx.globalAlpha = 1;
