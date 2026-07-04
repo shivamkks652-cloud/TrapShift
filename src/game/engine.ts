@@ -788,7 +788,20 @@ export class GameEngine {
   }
 
   private checkExit() {
-    const rect = tileRect(this.level.exit.x, this.level.exit.y);
+    // Forgiving exit hitbox: the visible flag lives inside a single tile, but on
+    // touch devices players routinely jump-hop through the goal column (peak
+    // jump ≈ 3 tiles above ground) or overshoot horizontally. Expand the
+    // trigger to cover the full vertical column at the exit's x — anyone who
+    // reaches this x is meant to finish the level. Also inflate horizontally
+    // by half a tile on each side so brushing the flag on a running dismount
+    // still counts. The flag itself remains a decorative single-tile sprite.
+    const ex = this.level.exit.x * TILE;
+    const rect: Rect = {
+      x: ex - TILE * 0.5,
+      y: 0,
+      w: TILE * 2,
+      h: this.rows().length * TILE,
+    };
     if (rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) {
       this.win();
     }
