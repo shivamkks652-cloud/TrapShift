@@ -42,16 +42,20 @@ export default function WorldSelect({ onBack, onSelectWorld }: Props) {
         {WORLDS.map((w) => {
           const unlocked = unlockedWorlds.has(w.id);
           const stars = starsByWorld[w.id] ?? { earned: 0, total: 0 };
+          const complete = stars.total > 0 && stars.earned >= stars.total;
           return (
             <button
               key={w.id}
               disabled={!unlocked}
               onClick={() => unlocked && onSelectWorld(w.id)}
-              className="relative rounded-3xl overflow-hidden h-28 flex items-end p-4 text-left disabled:opacity-50 active:scale-[0.98] transition-transform"
-              style={{ background: `linear-gradient(135deg, ${w.colorFrom}, ${w.colorTo})` }}
+              className="relative rounded-3xl overflow-hidden h-28 flex items-end p-4 text-left disabled:opacity-50 active:scale-[0.98] active:brightness-125 transition-[transform,filter,box-shadow] duration-150 group"
+              style={{
+                background: `linear-gradient(135deg, ${w.colorFrom}, ${w.colorTo})`,
+                boxShadow: complete ? `0 0 24px -4px ${w.accent}66` : undefined,
+              }}
             >
               <div
-                className="absolute inset-0 opacity-40"
+                className="absolute inset-0 opacity-40 group-active:opacity-70 transition-opacity"
                 style={{ background: `radial-gradient(circle at 80% 20%, ${w.accent}55, transparent 60%)` }}
               />
               <div className="relative z-10 flex flex-col gap-1">
@@ -60,7 +64,12 @@ export default function WorldSelect({ onBack, onSelectWorld }: Props) {
                 {unlocked ? (
                   <div className="flex items-center gap-1 text-amber-300 text-xs">
                     <Star size={12} className="fill-amber-300" />
-                    {stars.earned}/{stars.total}
+                    <span className="tabular-nums">{stars.earned}/{stars.total}</span>
+                    {complete && (
+                      <span className="ml-1 text-[9px] uppercase tracking-widest text-amber-200/80">
+                        Complete
+                      </span>
+                    )}
                   </div>
                 ) : (
                   <div className="flex items-center gap-1 text-white/40 text-xs">

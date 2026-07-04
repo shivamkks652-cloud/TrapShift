@@ -33,20 +33,26 @@ export default function LevelSelect({ worldId, onBack, onSelectLevel }: Props) {
         {world.levels.map((l) => {
           const unlocked = isLevelUnlocked(l.id, ALL_LEVEL_IDS);
           const p = progress[l.id];
+          const cleared = (p?.stars ?? 0) > 0;
           return (
             <button
               key={l.id}
               disabled={!unlocked}
               onClick={() => unlocked && onSelectLevel(l.id)}
-              className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border disabled:opacity-40 active:scale-95 transition-transform"
+              className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border disabled:opacity-50 active:scale-95 transition-transform relative overflow-hidden"
               style={{
-                background: unlocked ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.03)",
-                borderColor: unlocked ? world.accent + "66" : "rgba(255,255,255,0.08)",
+                background: unlocked ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.02)",
+                borderColor: unlocked
+                  ? cleared
+                    ? world.accent + "cc"
+                    : world.accent + "66"
+                  : "rgba(255,255,255,0.06)",
+                boxShadow: cleared ? `0 0 18px -6px ${world.accent}aa inset` : undefined,
               }}
             >
               {unlocked ? (
                 <>
-                  <span className="text-white text-xl font-bold">{l.index}</span>
+                  <span className="text-white text-xl font-bold tabular-nums">{l.index}</span>
                   <div className="flex gap-0.5">
                     {[1, 2, 3].map((i) => (
                       <Star
@@ -64,7 +70,10 @@ export default function LevelSelect({ worldId, onBack, onSelectLevel }: Props) {
                   ) : null}
                 </>
               ) : (
-                <Lock size={18} className="text-white/30" />
+                <>
+                  <Lock size={18} className="text-white/25" />
+                  <span className="text-[9px] uppercase tracking-widest text-white/25">Locked</span>
+                </>
               )}
             </button>
           );
