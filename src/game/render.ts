@@ -2,7 +2,7 @@ import type { GameEngine } from "./engine";
 import { classifyMovingWall } from "./engine";
 import { TILE } from "./types";
 import { SKINS } from "./storage";
-import { fxTick, getSmoothedCamX, drawTrapHalos } from "./renderFx";
+import { fxTick, getSmoothedCamX, drawTrapHalos, updateAndDrawShockwaves } from "./renderFx";
 import playerSpriteUrl from "@/assets/player-sprite.png";
 
 const playerSprite = new Image();
@@ -391,6 +391,10 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
     ctx.restore();
   }
   ctx.globalAlpha = 1;
+
+  // Death shockwave (Fx layer) — additive ring drawn where the player died;
+  // spawns on rising edge of engine.status==='dead', then fades over ~450ms.
+  updateAndDrawShockwaves(ctx, engine, fxDt, dangerColor);
 
   // player with squash & stretch, flipped when gravity inverted
   const skin = SKINS.find((s) => s.id === skinId) ?? SKINS[0];

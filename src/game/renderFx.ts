@@ -8,11 +8,22 @@
 import type { GameEngine } from "./engine";
 import { TILE } from "./types";
 
+interface Shockwave {
+  x: number;
+  y: number;
+  color: string;
+  t: number; // seconds elapsed since spawn
+  maxT: number;
+}
+
 interface FxState {
   // camera follow lerp
   smoothedCamX: number | null;
   // internal timing (Fx runs off perf clock so `render` signature stays untouched)
   lastNow: number;
+  // death-shockwave state — spawns once on rising edge of engine.status==='dead'
+  wasDead: boolean;
+  shockwaves: Shockwave[];
 }
 
 const stateMap = new WeakMap<GameEngine, FxState>();
@@ -20,7 +31,7 @@ const stateMap = new WeakMap<GameEngine, FxState>();
 function getState(engine: GameEngine): FxState {
   let s = stateMap.get(engine);
   if (!s) {
-    s = { smoothedCamX: null, lastNow: 0 };
+    s = { smoothedCamX: null, lastNow: 0, wasDead: false, shockwaves: [] };
     stateMap.set(engine, s);
   }
   return s;
@@ -188,5 +199,63 @@ export function drawTrapHalos(
   }
 
   ctx.restore();
+}
+
+
+/**
+ * Death shockwave ring — spawns a single expanding additive ring at the player's
+ * position on the rising edge of `engine.status === 'dead'`, then updates and
+ * draws it in world-space until it fades. Purely cosmetic; no engine mutation.
+ *
+ * Call this once per frame, in world-space, AFTER hazards and BEFORE the player.
+ */
+export function updateAndDrawShockwaves(
+  ctx: CanvasRenderingContext2D,
+  engine: GameEngine,
+  dt: number,
+  dangerColor: string,
+) {
+  const s = getState(engine);
+  const isDead = engine.status === "dead";
+  // rising edge — spawn a shockwave at the player's current center
+  if (isDead && !s.wasDead) {
+    s.shockwaves.push({
+      x: engine.player.x + engine.player.w / 2,
+      y: engine.player.y + engine.player.h / 2,
+      // colour matches the death-flash tint (engine.screenFlash.color) when
+      // available so the shockwave reads as caused by the same hazard family
+      color: engine.screenFlash?.color || dangerColor,
+      t: 0,
+      maxT: 0.45,
+    });
+  }
+  s.wasDead = isDead;
+
+  if (s.shockwaves.length === 0) return;
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = s.shockwaves.length - 1; i >= 0; i--) {
+    const w = s.shockwaves[i];
+    w.t += dt;
+    if (w.t >= w.maxT) {
+      s.shockwaves.splice(i, 1);
+      continue;
+    }
+    const p = w.t / w.maxT;
+    const eased = 1 - Math.pow(1 - p, 3); // easeOutCubic
+    const rOuter = 12 + eased * 140;
+    const rInner = Math.max(0, rOuter - (18 + p * 22));
+    const alpha = (1 - p) * 0.65;
+    // Ring drawn via two arcs + even-odd fill for a hollow shockwave
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = w.color;
+    ctx.beginPath();
+    ctx.arc(w.x, w.y, rOuter, 0, Math.PI * 2);
+    ctx.arc(w.x, w.y, rInner, 0, Math.PI * 2, true);
+    ctx.fill("evenodd");
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
 }
 
