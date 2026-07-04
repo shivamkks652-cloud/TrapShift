@@ -31,14 +31,15 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
 
   useEffect(() => {
     if (phase !== "playing") return;
-    let raf: number;
+    // Timer refresh rate: HUD shows time.toFixed(2) (10ms precision), but a full
+    // 60Hz RAF here forces React to reconcile the whole HUD + subtree on every
+    // frame. 20Hz (50ms) is more than enough resolution for a human-readable
+    // stopwatch and drops React work by ~66%.
     const t0 = performance.now() - elapsed * 1000;
-    function tick() {
+    const iv = window.setInterval(() => {
       setElapsed((performance.now() - t0) / 1000);
-      raf = requestAnimationFrame(tick);
-    }
-    raf = requestAnimationFrame(tick);
-    return () => cancelAnimationFrame(raf);
+    }, 50);
+    return () => window.clearInterval(iv);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase]);
 
