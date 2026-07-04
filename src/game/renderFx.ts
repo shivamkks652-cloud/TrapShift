@@ -27,6 +27,16 @@ interface DustMote {
   z: number; // depth 0..1 (near..far) — controls parallax and alpha
 }
 
+interface TrailGhost {
+  x: number;
+  y: number;
+  facing: number;
+  w: number;
+  h: number;
+  t: number; // seconds since captured
+  maxT: number;
+}
+
 interface FxState {
   // camera follow lerp
   smoothedCamX: number | null;
@@ -38,6 +48,9 @@ interface FxState {
   // ambient dust motes drifting in screen-space with camera-based parallax
   dust: DustMote[];
   dustSpawnAccum: number;
+  // player after-image trail
+  trail: TrailGhost[];
+  trailAccum: number;
 }
 
 const stateMap = new WeakMap<GameEngine, FxState>();
@@ -52,6 +65,8 @@ function getState(engine: GameEngine): FxState {
       shockwaves: [],
       dust: [],
       dustSpawnAccum: 0,
+      trail: [],
+      trailAccum: 0,
     };
     stateMap.set(engine, s);
   }
@@ -343,6 +358,91 @@ export function updateAndDrawAmbientDust(
     ctx.fillStyle = opts.accent;
     ctx.beginPath();
     ctx.arc(drawX, d.y, d.size, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+  ctx.globalAlpha = 1;
+}
+
+
+/**
+ * Player after-image trail — samples player pose over time and draws faint
+ * additive copies behind. Purely cosmetic; zero engine mutation.
+ *
+ * Read-only inspection of engine.player.{x,y,w,h,vx,vy,onGround,facing}.
+ *
+ * Sampled at ~40Hz (25ms) when the player is moving fast OR airborne, so
+ * standing still produces no trail. Each sample lives ~200ms with linear
+ * alpha fade. Max 6 concurrent ghosts.
+ *
+ * Call this in world-space (post ctx.translate(-camX,...)), BEFORE the
+ * player draw, so ghosts sit behind the player.
+ *
+ * @param skinPrimary CSS color of the equipped skin — used as ghost tint.
+ */
+export function updateAndDrawPlayerTrail(
+  ctx: CanvasRenderingContext2D,
+  engine: GameEngine,
+  dt: number,
+  skinPrimary: string,
+) {
+  const s = getState(engine);
+  const MAX_GHOSTS = 6;
+  const SAMPLE_INTERVAL = 0.025; // seconds
+
+  // Only produce a trail when it reads: fast horizontal motion or airborne.
+  // Dead state suppresses new samples so we don't smear on top of death VFX.
+  const fastEnough = Math.abs(engine.player.vx) > 220 || !engine.player.onGround;
+  const alive = engine.status !== "dead";
+
+  if (fastEnough && alive) {
+    s.trailAccum += dt;
+    while (s.trailAccum >= SAMPLE_INTERVAL && s.trail.length < MAX_GHOSTS) {
+      s.trailAccum -= SAMPLE_INTERVAL;
+      s.trail.push({
+        x: engine.player.x,
+        y: engine.player.y,
+        facing: engine.player.facing,
+        w: engine.player.w,
+        h: engine.player.h,
+        t: 0,
+        maxT: 0.2,
+      });
+    }
+    if (s.trailAccum > SAMPLE_INTERVAL * 4) s.trailAccum = SAMPLE_INTERVAL * 4;
+  } else {
+    s.trailAccum = 0;
+  }
+
+  if (s.trail.length === 0) return;
+
+  ctx.save();
+  ctx.globalCompositeOperation = "lighter";
+  for (let i = s.trail.length - 1; i >= 0; i--) {
+    const g = s.trail[i];
+    g.t += dt;
+    if (g.t >= g.maxT) {
+      s.trail.splice(i, 1);
+      continue;
+    }
+    const p = g.t / g.maxT;
+    const alpha = (1 - p) * 0.28; // subtle
+    const scale = 1 - p * 0.15; // tiny shrink toward the tail
+    const w = g.w * scale;
+    const h = g.h * scale;
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = skinPrimary;
+    // rounded slab so a sprite-less silhouette still reads as "the player"
+    const rx = g.x + (g.w - w) / 2;
+    const ry = g.y + (g.h - h) / 2;
+    const r = Math.min(w, h) * 0.35;
+    ctx.beginPath();
+    ctx.moveTo(rx + r, ry);
+    ctx.arcTo(rx + w, ry, rx + w, ry + h, r);
+    ctx.arcTo(rx + w, ry + h, rx, ry + h, r);
+    ctx.arcTo(rx, ry + h, rx, ry, r);
+    ctx.arcTo(rx, ry, rx + w, ry, r);
+    ctx.closePath();
     ctx.fill();
   }
   ctx.restore();

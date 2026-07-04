@@ -2,7 +2,7 @@ import type { GameEngine } from "./engine";
 import { classifyMovingWall } from "./engine";
 import { TILE } from "./types";
 import { SKINS } from "./storage";
-import { fxTick, getSmoothedCamX, drawTrapHalos, updateAndDrawShockwaves, updateAndDrawAmbientDust } from "./renderFx";
+import { fxTick, getSmoothedCamX, drawTrapHalos, updateAndDrawShockwaves, updateAndDrawAmbientDust, updateAndDrawPlayerTrail } from "./renderFx";
 import playerSpriteUrl from "@/assets/player-sprite.png";
 
 const playerSprite = new Image();
@@ -407,6 +407,12 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
 
   // player with squash & stretch, flipped when gravity inverted
   const skin = SKINS.find((s) => s.id === skinId) ?? SKINS[0];
+
+  // Player after-image trail (Fx layer) — subtle rounded silhouettes trailing
+  // behind the player when fast or airborne. Read-only sampling; drawn BEFORE
+  // the player so ghosts sit behind.
+  updateAndDrawPlayerTrail(ctx, engine, fxDt, skin.primary);
+
   const squashAmt = engine.squash;
   const breathe = engine.player.onGround && Math.abs(engine.player.vx) < 8 ? Math.sin(frame / 28) * 0.03 : 0;
   const stretchY = 1 - squashAmt * 0.35 + breathe;
