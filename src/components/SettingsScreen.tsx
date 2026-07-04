@@ -55,7 +55,7 @@ export default function SettingsScreen({ onBack }: Props) {
           control={null}
         />
         <div className="flex items-center gap-3 -mt-2 px-1">
-          <span className="text-xs text-white/40 font-mono">Slow</span>
+          <span className="text-xs text-white/40 font-mono w-8 text-right">Slow</span>
           <input
             type="range"
             min={0.6}
@@ -63,12 +63,22 @@ export default function SettingsScreen({ onBack }: Props) {
             step={0.05}
             value={settings.touchSensitivity}
             onChange={(e) => setSensitivity(parseFloat(e.target.value))}
+            aria-label="Control sensitivity"
             className="flex-1 accent-cyan-400"
           />
-          <span className="text-xs text-white/40 font-mono">Fast</span>
+          <span className="text-xs text-white/40 font-mono w-8">Fast</span>
         </div>
-        <div className="text-center text-xs text-white/30 font-mono -mt-2">
-          {Math.round(settings.touchSensitivity * 100)}%
+        <div className="flex items-center justify-center gap-2 -mt-2">
+          <span className="text-xs text-white/50 font-mono tabular-nums w-12 text-right">
+            {Math.round(settings.touchSensitivity * 100)}%
+          </span>
+          <button
+            type="button"
+            onClick={() => setSensitivity(1)}
+            className="text-[10px] uppercase tracking-widest text-white/40 hover:text-cyan-300 active:scale-95 transition"
+          >
+            Reset
+          </button>
         </div>
       </div>
     </div>
