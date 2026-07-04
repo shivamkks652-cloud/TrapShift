@@ -4,18 +4,30 @@
 let ctx: AudioContext | null = null;
 let musicGain: GainNode | null = null;
 let sfxGain: GainNode | null = null;
+let masterCompressor: DynamicsCompressorNode | null = null;
 let currentMusicNodes: { stop: () => void } | null = null;
 let muted = false;
 
 function getCtx(): AudioContext {
   if (!ctx) {
     ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // Insert a soft-knee compressor between the sub-buses and the destination
+    // so stacked SFX transients (e.g. simultaneous death sting + explosion +
+    // dropped shard on a chain-reaction respawn) don't clip the output. The
+    // settings are gentle: -12dB threshold, 3:1 ratio, 6ms attack, 250ms release.
+    masterCompressor = ctx.createDynamicsCompressor();
+    masterCompressor.threshold.value = -12;
+    masterCompressor.knee.value = 12;
+    masterCompressor.ratio.value = 3;
+    masterCompressor.attack.value = 0.006;
+    masterCompressor.release.value = 0.25;
+    masterCompressor.connect(ctx.destination);
     musicGain = ctx.createGain();
     musicGain.gain.value = 0.22;
-    musicGain.connect(ctx.destination);
+    musicGain.connect(masterCompressor);
     sfxGain = ctx.createGain();
     sfxGain.gain.value = 0.5;
-    sfxGain.connect(ctx.destination);
+    sfxGain.connect(masterCompressor);
   }
   return ctx;
 }
