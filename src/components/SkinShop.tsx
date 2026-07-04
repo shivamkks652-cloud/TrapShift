@@ -38,6 +38,7 @@ export default function SkinShop({ onBack }: Props) {
         {SKINS.map((s) => {
           const isUnlocked = unlocked.includes(s.id);
           const isEquipped = equipped === s.id;
+          const canAfford = !!s.cost && shards >= s.cost;
           return (
             <button
               key={s.id}
@@ -54,11 +55,15 @@ export default function SkinShop({ onBack }: Props) {
               style={{
                 background: "rgba(255,255,255,0.06)",
                 borderColor: isEquipped ? s.primary : "rgba(255,255,255,0.1)",
+                boxShadow: isEquipped ? `0 0 22px -6px ${s.primary}aa` : undefined,
               }}
             >
               {isEquipped && (
-                <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-cyan-400 flex items-center justify-center">
-                  <Check size={12} className="text-[#0b0a1f]" />
+                <div
+                  className="absolute -top-2 -right-2 flex items-center gap-1 px-2 py-0.5 rounded-full bg-cyan-400 text-[#0b0a1f] text-[10px] font-bold uppercase tracking-wider shadow-lg"
+                  aria-label="Equipped"
+                >
+                  <Check size={10} strokeWidth={3} /> Equipped
                 </div>
               )}
               <div
@@ -67,9 +72,16 @@ export default function SkinShop({ onBack }: Props) {
               />
               <span className="text-white text-sm font-medium">{s.name}</span>
               {!isUnlocked && (
-                <div className="flex items-center gap-1 text-white/50 text-xs">
+                <div
+                  className={`flex items-center gap-1 text-xs tabular-nums ${
+                    canAfford ? "text-amber-300" : "text-white/40"
+                  }`}
+                >
                   <Lock size={10} />
-                  <Zap size={10} className="fill-amber-300 text-amber-300" />
+                  <Zap
+                    size={10}
+                    className={canAfford ? "fill-amber-300 text-amber-300" : "fill-white/40 text-white/40"}
+                  />
                   {s.cost}
                 </div>
               )}
