@@ -449,3 +449,85 @@ export function updateAndDrawPlayerTrail(
   ctx.globalAlpha = 1;
 }
 
+
+// -----------------------------------------------------------------------------
+// Per-frame gradient / bitmap caches
+// -----------------------------------------------------------------------------
+// Canvas gradient + tile cache. `render()` used to call ctx.createLinearGradient
+// / createRadialGradient once per background paint AND once per terrain `#` tile
+// per frame (i.e. dozens to hundreds of allocations at 60Hz on wide levels).
+// Since colour stops + tile shape are stable per world, we cache them per engine
+// (WeakMap; auto-freed when the engine is discarded on level change).
+
+interface BackgroundGradientCache {
+  key: string;
+  gradient: CanvasGradient;
+}
+
+interface TileBitmapCache {
+  key: string;
+  bitmap: HTMLCanvasElement;
+}
+
+const bgGradCache = new WeakMap<GameEngine, BackgroundGradientCache>();
+const tileBitmapCache = new WeakMap<GameEngine, TileBitmapCache>();
+
+/**
+ * Returns a cached vertical linear gradient for the background paint. The cache
+ * key includes width, height, and both colour stops — if the canvas is resized
+ * or the world changes mid-render (impossible in practice, but defensive), the
+ * gradient is regenerated. Otherwise the same gradient instance is returned
+ * across frames, saving one allocation per frame.
+ */
+export function getCachedBackgroundGradient(
+  ctx: CanvasRenderingContext2D,
+  engine: GameEngine,
+  width: number,
+  height: number,
+  from: string,
+  to: string,
+): CanvasGradient {
+  const key = `${width}x${height}:${from}:${to}`;
+  const cached = bgGradCache.get(engine);
+  if (cached && cached.key === key) return cached.gradient;
+  const g = ctx.createLinearGradient(0, 0, 0, height);
+  g.addColorStop(0, from);
+  g.addColorStop(1, to);
+  bgGradCache.set(engine, { key, gradient: g });
+  return g;
+}
+
+/**
+ * Returns a small offscreen bitmap of a single '#' terrain tile (fill gradient
+ * + accent-stroked inner border), sized exactly to TILE. Callers use
+ * `ctx.drawImage(tile, x, y)` per tile instead of allocating a fresh
+ * CanvasGradient and stroking a rect for every tile every frame. On a level
+ * with ~200 visible tiles that's 200 fewer gradient allocations + 200 fewer
+ * stroke path setups per frame.
+ *
+ * The bitmap is regenerated when tile size or worldAccent changes.
+ */
+export function getCachedTerrainTileBitmap(
+  engine: GameEngine,
+  tileSize: number,
+  worldAccent: string,
+): HTMLCanvasElement {
+  const key = `${tileSize}:${worldAccent}`;
+  const cached = tileBitmapCache.get(engine);
+  if (cached && cached.key === key) return cached.bitmap;
+  const off = document.createElement("canvas");
+  off.width = tileSize;
+  off.height = tileSize;
+  const octx = off.getContext("2d")!;
+  const grad = octx.createLinearGradient(0, 0, 0, tileSize);
+  grad.addColorStop(0, "#232a52");
+  grad.addColorStop(1, "#141833");
+  octx.fillStyle = grad;
+  octx.fillRect(0, 0, tileSize, tileSize);
+  octx.strokeStyle = worldAccent + "55";
+  octx.lineWidth = 2;
+  octx.strokeRect(1, 1, tileSize - 2, tileSize - 2);
+  tileBitmapCache.set(engine, { key, bitmap: off });
+  return off;
+}
+

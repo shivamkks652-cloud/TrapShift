@@ -2,7 +2,7 @@ import type { GameEngine } from "./engine";
 import { classifyMovingWall } from "./engine";
 import { TILE } from "./types";
 import { SKINS } from "./storage";
-import { fxTick, getSmoothedCamX, drawTrapHalos, updateAndDrawShockwaves, updateAndDrawAmbientDust, updateAndDrawPlayerTrail } from "./renderFx";
+import { fxTick, getSmoothedCamX, drawTrapHalos, updateAndDrawShockwaves, updateAndDrawAmbientDust, updateAndDrawPlayerTrail, getCachedBackgroundGradient, getCachedTerrainTileBitmap } from "./renderFx";
 import playerSpriteUrl from "@/assets/player-sprite.png";
 
 const playerSprite = new Image();
@@ -96,11 +96,8 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
   const camX = getSmoothedCamX(engine, targetCamX, fxDt);
   const camY = 0;
 
-  // background gradient
-  const bgGrad = ctx.createLinearGradient(0, 0, 0, height);
-  bgGrad.addColorStop(0, opts.worldFrom);
-  bgGrad.addColorStop(1, opts.worldTo);
-  ctx.fillStyle = bgGrad;
+  // background gradient (cached per engine — same colours every frame)
+  ctx.fillStyle = getCachedBackgroundGradient(ctx, engine, width, height, opts.worldFrom, opts.worldTo);
   ctx.fillRect(0, 0, width, height);
 
   // parallax glow orbs
@@ -144,20 +141,16 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
   const endTx = Math.min(rows[0].length, Math.ceil((camX + width) / TILE) + 1);
 
   // dark zones drawn first as darkness overlays computed after terrain, so render terrain then punch holes
+  const terrainTile = getCachedTerrainTileBitmap(engine, TILE, worldAccent);
   for (let ty = 0; ty < rows.length; ty++) {
     for (let tx = startTx; tx < endTx; tx++) {
       const c = rows[ty][tx];
       const x = tx * TILE;
       const y = ty * TILE;
       if (c === "#") {
-        const grad = ctx.createLinearGradient(x, y, x, y + TILE);
-        grad.addColorStop(0, "#232a52");
-        grad.addColorStop(1, "#141833");
-        ctx.fillStyle = grad;
-        ctx.fillRect(x, y, TILE, TILE);
-        ctx.strokeStyle = worldAccent + "55";
-        ctx.lineWidth = 2;
-        ctx.strokeRect(x + 1, y + 1, TILE - 2, TILE - 2);
+        // Cached bitmap: same gradient + accent border as before, one image blit
+        // per tile instead of one createLinearGradient + fillRect + strokeRect.
+        ctx.drawImage(terrainTile, x, y);
       } else if (c === "S") {
         drawNeonSpikes(ctx, x, y, dangerColor, frame);
       } else if (c === "~") {
