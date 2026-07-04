@@ -2,6 +2,7 @@ import type { GameEngine } from "./engine";
 import { classifyMovingWall } from "./engine";
 import { TILE } from "./types";
 import { SKINS } from "./storage";
+import { fxTick, getSmoothedCamX } from "./renderFx";
 import playerSpriteUrl from "@/assets/player-sprite.png";
 
 const playerSprite = new Image();
@@ -77,6 +78,8 @@ function lerp(a: number, b: number, t: number) {
 export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: RenderOptions) {
   const { width, height, worldAccent, skinId, frame } = opts;
   const cb = !!opts.colorblindMode;
+  // Fx clock — must be ticked exactly once per render frame.
+  const fxDt = fxTick(engine);
   // Colorblind-safe palette: swap red/green pairs for orange/blue, which stay
   // distinguishable for protanopia/deuteranopia (the most common forms).
   const dangerColor = cb ? "#ff8a3d" : "#ff3d5c";
@@ -89,7 +92,8 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
   const shakeY = engine.cameraShake > 0 ? (Math.random() - 0.5) * engine.cameraShake * 14 : 0;
 
   const levelPxWidth = engine.level.rows[0].length * TILE;
-  const camX = Math.max(0, Math.min(levelPxWidth - width, engine.player.x + engine.player.w / 2 - width / 2));
+  const targetCamX = Math.max(0, Math.min(levelPxWidth - width, engine.player.x + engine.player.w / 2 - width / 2));
+  const camX = getSmoothedCamX(engine, targetCamX, fxDt);
   const camY = 0;
 
   // background gradient
