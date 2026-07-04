@@ -58,8 +58,8 @@ export default function ResultsOverlay({ stars, timeMs, shardsCollected, shardsT
             <Star
               key={i}
               size={36}
-              className={i <= stars ? "fill-amber-300 text-amber-300" : "text-white/20"}
-              style={{ animationDelay: `${i * 100}ms` }}
+              className={`${i <= stars ? "fill-amber-300 text-amber-300" : "text-white/20"} animate-in fade-in zoom-in-50 spin-in-12 duration-500 fill-mode-both`}
+              style={{ animationDelay: `${i * 180}ms` }}
             />
           ))}
         </div>
