@@ -8,8 +8,8 @@ interface Props {
 
 export default function LevelIntro({ level, onStart }: Props) {
   return (
-    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm">
-      <div className="w-80 rounded-3xl bg-[#151233]/95 border border-white/10 p-6 flex flex-col items-center gap-3 text-center">
+    <div className="absolute inset-0 z-30 flex items-center justify-center bg-black/80 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-80 rounded-3xl bg-[#151233]/95 border border-white/10 p-6 flex flex-col items-center gap-3 text-center animate-in fade-in zoom-in-95 slide-in-from-bottom-3 duration-300">
         <span className="text-white/40 text-xs uppercase tracking-widest">
           World {level.world} · Level {level.index}
         </span>

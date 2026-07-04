@@ -10,8 +10,8 @@ interface Props {
 
 export default function PauseOverlay({ onResume, onRestart, onQuit, muted, onToggleMute }: Props) {
   return (
-    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm">
-      <div className="w-72 rounded-3xl bg-[#151233]/95 border border-white/10 p-6 flex flex-col gap-3 shadow-2xl">
+    <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+      <div className="w-72 rounded-3xl bg-[#151233]/95 border border-white/10 p-6 flex flex-col gap-3 shadow-2xl animate-in fade-in zoom-in-95 slide-in-from-bottom-2 duration-300">
         <h2 className="text-center text-xl font-bold text-white tracking-wide mb-2">Paused</h2>
         <button
           onClick={onResume}
