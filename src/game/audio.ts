@@ -26,9 +26,22 @@ export function resumeAudio() {
 }
 
 export function setMuted(v: boolean) {
+  const wasMuted = muted;
   muted = v;
   if (musicGain) musicGain.gain.value = v ? 0 : 0.22;
   if (sfxGain) sfxGain.gain.value = v ? 0 : 0.5;
+  // Muting mid-run: also stop any oscillators that keep running forever (music
+  // drone + gate/gravity hums). Previously we only silenced the master gains,
+  // which left ~1 bass osc + up to 4 hum oscs alive in the audio graph
+  // burning CPU. Restarting on unmute is left to the engine's normal state
+  // transitions (natural laser/gate/gravity toggles + startMusic on next level).
+  if (v && !wasMuted) {
+    stopMusic();
+    for (const [, h] of gateHums) h.stop();
+    gateHums.clear();
+    gravityHum?.stop();
+    gravityHum = null;
+  }
 }
 
 export function isMuted() {
