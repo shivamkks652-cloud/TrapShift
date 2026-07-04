@@ -20,7 +20,13 @@ export default function MainMenu({ onPlay, onEndless, onDaily, onSkins, onSettin
   }, []);
 
   return (
-    <div className="relative w-full h-full flex flex-col items-center justify-between px-6 py-10 overflow-hidden bg-gradient-to-b from-[#0b1026] via-[#150826] to-[#020814]">
+    <div
+      className="relative w-full h-full flex flex-col items-center justify-between px-6 overflow-hidden bg-gradient-to-b from-[#0b1026] via-[#150826] to-[#020814]"
+      style={{
+        paddingTop: "max(2.5rem, env(safe-area-inset-top))",
+        paddingBottom: "max(2.5rem, env(safe-area-inset-bottom))",
+      }}
+    >
       <BackgroundGlow />
 
       <div className="relative flex flex-col items-center mt-8 gap-2">
@@ -33,9 +39,13 @@ export default function MainMenu({ onPlay, onEndless, onDaily, onSkins, onSettin
       <div className="relative w-full max-w-xs flex flex-col gap-3">
         <button
           onClick={onPlay}
-          className="group relative flex items-center justify-center gap-3 rounded-2xl py-4 bg-cyan-400 text-[#0b0a1f] font-bold text-lg shadow-[0_0_30px_rgba(75,243,255,0.5)] active:scale-95 transition-transform"
+          className="group relative overflow-hidden flex items-center justify-center gap-3 rounded-2xl py-4 bg-cyan-400 text-[#0b0a1f] font-bold text-lg shadow-[0_0_30px_rgba(75,243,255,0.5)] active:scale-95 transition-transform"
         >
-          <Play size={22} fill="currentColor" /> Play Story
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 -translate-x-full bg-gradient-to-r from-transparent via-white/40 to-transparent group-hover:translate-x-full animate-ts-cta-shine motion-reduce:animate-none"
+          />
+          <Play size={22} fill="currentColor" className="relative" /> <span className="relative">Play Story</span>
         </button>
         <div className="grid grid-cols-2 gap-3">
           <button
