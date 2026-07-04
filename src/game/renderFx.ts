@@ -37,6 +37,8 @@ interface TrailGhost {
   maxT: number;
 }
 
+export type QualityTier = "low" | "mid" | "high";
+
 interface FxState {
   // camera follow lerp
   smoothedCamX: number | null;
@@ -51,6 +53,11 @@ interface FxState {
   // player after-image trail
   trail: TrailGhost[];
   trailAccum: number;
+  // quality tier auto-detect (rolling frame-time average)
+  qualityTier: QualityTier;
+  frameTimeSum: number; // ms
+  frameTimeSamples: number;
+  qualityDecidedAt: number; // samples since tier last changed
 }
 
 const stateMap = new WeakMap<GameEngine, FxState>();
@@ -67,10 +74,29 @@ function getState(engine: GameEngine): FxState {
       dustSpawnAccum: 0,
       trail: [],
       trailAccum: 0,
+      qualityTier: "high",
+      frameTimeSum: 0,
+      frameTimeSamples: 0,
+      qualityDecidedAt: 0,
     };
     stateMap.set(engine, s);
   }
   return s;
+}
+
+/**
+ * Reads the current auto-detected quality tier for an engine. The tier is
+ * updated by fxTick() based on a rolling 60-sample frame-time average:
+ *   - avg < 18ms (~55 fps) : high
+ *   - avg < 26ms (~38 fps) : mid
+ *   - else                 : low
+ *
+ * Hysteresis: the tier only re-evaluates after 60 samples since the last
+ * change, so a single stutter (GC pause / OS interrupt) doesn't flap the tier.
+ * Callers use the tier to scale particle caps, disable ambient effects, etc.
+ */
+export function getQualityTier(engine: GameEngine): QualityTier {
+  return getState(engine).qualityTier;
 }
 
 /**
@@ -85,8 +111,33 @@ export function fxTick(engine: GameEngine): number {
     s.lastNow = now;
     return 0;
   }
-  const dt = Math.min(0.05, (now - s.lastNow) / 1000);
+  const rawMs = now - s.lastNow;
+  const dt = Math.min(0.05, rawMs / 1000);
   s.lastNow = now;
+
+  // Rolling 60-sample frame-time average, then hysteretic tier decision.
+  // Ignore samples wider than 100ms (tab-switch stalls) so backgrounding
+  // doesn't downgrade the tier by accident.
+  if (rawMs < 100) {
+    s.frameTimeSum += rawMs;
+    s.frameTimeSamples++;
+  }
+  s.qualityDecidedAt++;
+  const SAMPLE_WINDOW = 60;
+  if (s.frameTimeSamples >= SAMPLE_WINDOW && s.qualityDecidedAt >= SAMPLE_WINDOW) {
+    const avg = s.frameTimeSum / s.frameTimeSamples;
+    let next: QualityTier;
+    if (avg < 18) next = "high";
+    else if (avg < 26) next = "mid";
+    else next = "low";
+    if (next !== s.qualityTier) {
+      s.qualityTier = next;
+      s.qualityDecidedAt = 0;
+    }
+    s.frameTimeSum = 0;
+    s.frameTimeSamples = 0;
+  }
+
   return dt;
 }
 
@@ -313,8 +364,11 @@ export function updateAndDrawAmbientDust(
   opts: { width: number; height: number; camX: number; accent: string },
 ) {
   const s = getState(engine);
-  const MAX_MOTES = 32;
-  const SPAWN_PER_SEC = 8;
+  // Auto-quality: on low tier, skip ambient dust entirely; on mid, halve the
+  // budget so the mote count stays under the CPU-safe threshold.
+  if (s.qualityTier === "low") return;
+  const MAX_MOTES = s.qualityTier === "high" ? 32 : 16;
+  const SPAWN_PER_SEC = s.qualityTier === "high" ? 8 : 4;
 
   // Spawn budget over time (dt-integrated so it's frame-rate independent).
   s.dustSpawnAccum += dt * SPAWN_PER_SEC;
@@ -387,7 +441,10 @@ export function updateAndDrawPlayerTrail(
   skinPrimary: string,
 ) {
   const s = getState(engine);
-  const MAX_GHOSTS = 6;
+  // Auto-quality: on low tier, skip the trail entirely; on mid, halve the
+  // ghost cap so peak render work stays predictable.
+  if (s.qualityTier === "low") return;
+  const MAX_GHOSTS = s.qualityTier === "high" ? 6 : 3;
   const SAMPLE_INTERVAL = 0.025; // seconds
 
   // Only produce a trail when it reads: fast horizontal motion or airborne.
