@@ -325,9 +325,19 @@ export function startMusic(world: number) {
 
   const stepDur = timbre.stepDur;
   let timer: number;
+  // Anchor to wall-clock so setTimeout drift over long play sessions can't
+  // accumulate — each step's scheduled wall-time is (startedAt + i * stepDur).
+  const startedAt = performance.now();
 
   function step() {
     if (stopped) return;
+    // Pause the scheduler while the tab is hidden so we don't burn CPU
+    // scheduling silent oscillators in the background.
+    if (typeof document !== "undefined" && document.hidden) {
+      // Re-check every 500ms until visible again — negligible cost.
+      timer = window.setTimeout(step, 500);
+      return;
+    }
     const c2 = getCtx();
     // World 7 (Chaos Rift) occasionally skips/jitters a step for a glitchy, unstable feel.
     const glitchSkip = world === 7 && Math.random() < 0.12;
@@ -346,7 +356,12 @@ export function startMusic(world: number) {
       osc.stop(c2.currentTime + stepDur);
     }
     stepIndex++;
-    timer = window.setTimeout(step, stepDur * 1000);
+    // Self-correcting schedule: aim for the exact wall-time of the next step
+    // rather than adding a fixed stepDur each iteration (which drifts because
+    // setTimeout min-delay + GC pauses accumulate).
+    const nextTargetMs = startedAt + stepIndex * stepDur * 1000;
+    const delayMs = Math.max(0, nextTargetMs - performance.now());
+    timer = window.setTimeout(step, delayMs);
   }
   step();
 
