@@ -2,7 +2,7 @@ import type { GameEngine } from "./engine";
 import { classifyMovingWall } from "./engine";
 import { TILE } from "./types";
 import { SKINS } from "./storage";
-import { fxTick, getSmoothedCamX } from "./renderFx";
+import { fxTick, getSmoothedCamX, drawTrapHalos } from "./renderFx";
 import playerSpriteUrl from "@/assets/player-sprite.png";
 
 const playerSprite = new Image();
@@ -243,6 +243,10 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
   for (const cr of engine.level.chaosRifts ?? []) {
     drawChaosRift(ctx, cr, engine.chaosRiftEffect[cr.id] ?? "gravity", frame);
   }
+
+  // Additive lethal-hazard halos (Fx layer) — draws bloom on top of the existing
+  // trap art without repainting it. Purely cosmetic, reads engine hazard state.
+  drawTrapHalos(ctx, engine, frame, dangerColor);
 
   // portals
   for (const p of engine.level.portals ?? []) {
