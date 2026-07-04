@@ -418,3 +418,28 @@
     inset: -1px;
   }
 }
+
+/* --- Full-fill + safe-area setup (Android fullscreen / notch handling) ----
+ * Ensure the app fills the entire physical viewport so Android WebView
+ * (once running edge-to-edge from MainActivity) doesn't leave any white
+ * border around the canvas. The dark background matches the game's
+ * palette so any splash-to-app transition flash reads as intentional.
+ */
+html, body, #root {
+  height: 100%;
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  background-color: #020814;
+  overscroll-behavior: none;
+}
+body {
+  /* Disable browser text-selection long-press context in the game area */
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Prevent pull-to-refresh / rubber-band scroll on Android */
+  overflow: hidden;
+  touch-action: none;
+}
+

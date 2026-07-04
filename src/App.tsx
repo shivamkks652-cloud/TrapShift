@@ -43,7 +43,13 @@ function App() {
   }, [screen.name]);
 
   return (
-    <div className="fixed inset-0 w-full h-full overflow-hidden bg-black text-white font-sans">
+    <div
+      className="fixed inset-0 w-full h-full overflow-hidden bg-black text-white font-sans"
+      style={{
+        paddingLeft: "env(safe-area-inset-left)",
+        paddingRight: "env(safe-area-inset-right)",
+      }}
+    >
       {screen.name === "menu" && (
         <MainMenu
           onPlay={() => setScreen({ name: "worlds" })}
