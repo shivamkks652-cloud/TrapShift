@@ -403,18 +403,19 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
   ctx.scale(engine.player.facing === -1 ? -stretchX : stretchX, stretchY);
   if (lean) ctx.rotate(lean);
   const w = engine.player.w;
-  // sprite hitbox anchor: draw taller than the collision box so the robot silhouette reads
-  // clearly, but keep the box itself (used for physics) completely unchanged.
-  const h = engine.player.h * 1.55;
+  // sprite hitbox anchor: draw noticeably larger than the collision box so the
+  // robot silhouette reads clearly on phone screens — physics box itself is
+  // completely unchanged. Bumped ~28% over the original to make the hero pop.
+  const h = engine.player.h * 2.0;
   const hOffset = -engine.player.h * 0.5 - (h - engine.player.h) * 0.72;
   if (!isDead && playerSprite.complete && playerSprite.naturalWidth > 0) {
-    ctx.drawImage(playerSprite, col * CELL_W, row * CELL_H, CELL_W, CELL_H, -w * 0.85, hOffset, w * 1.7, h);
+    ctx.drawImage(playerSprite, col * CELL_W, row * CELL_H, CELL_W, CELL_H, -w * 1.1, hOffset, w * 2.2, h);
     if (skin.id !== "default") {
       ctx.save();
       ctx.globalCompositeOperation = "source-atop";
       ctx.globalAlpha = 0.38;
       ctx.fillStyle = skin.primary;
-      ctx.fillRect(-w * 0.85, hOffset, w * 1.7, h);
+      ctx.fillRect(-w * 1.1, hOffset, w * 2.2, h);
       ctx.globalAlpha = 1;
       ctx.restore();
     }
