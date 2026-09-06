@@ -71,7 +71,9 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
   function handleEvent(type: string) {
     if (type === "shard") setShardsCollected((s) => s + 1);
     else if (type === "checkpoint") showToast("Checkpoint!");
-    else if (type === "switch") showToast("Gate opened!");
+    else if (type === "gateOpen") showToast("Gate opened!");
+    else if (type === "switchArmed") showToast("Switch armed");
+    else if (type === "switchDenied") showToast("Locked — wrong order!");
   }
 
   const nextLevelId = getNextLevelId(level.id);

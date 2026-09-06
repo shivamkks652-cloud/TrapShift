@@ -154,6 +154,7 @@ export interface Switch {
   x: number; // tile coords (stand on it to activate)
   y: number;
   gateId: string; // id of the gate this switch opens
+  order?: number; // optional: for multi-switch gates, switches must arm in ascending order
 }
 
 export interface Gate {

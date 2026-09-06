@@ -1,0 +1,23 @@
+{
+  "summary": "Frontend-only regression + new-feature test on TrapShift Preview. All requested behaviours verified end-to-end. TEST 1 (W2-4 Double Lock ORDERED two-switch gate — headline feature): PASS. Seeded localStorage to unlock World 2, navigated Play Story -> Voltgrid City -> level-card-w2-4 -> Start. Player at x=2, near switch (swB) at x=6, far switch (swA, order 1) at x=13, gate g1 at x=18. (a) Short right-tap to step onto NEAR switch first -> data-testid='checkpoint-toast' text 'Locked — wrong order!' captured; red gate stayed solid (screenshot). (b) Continued right onto FAR switch -> 'Switch armed' toast captured (screenshot; gate still visible). (c) Held ArrowLeft back to NEAR switch (correct order now) -> data-testid='gate-toast' text 'Gate opened!' captured; red gate powered down to dashed outline (screenshot). Distinct testids ('checkpoint-toast' vs 'gate-toast') verified working. TEST 2 (W1-6 The Lever single switch->gate regression): PASS - held ArrowRight, 'Gate opened!' fired on gate-toast then 'Checkpoint!' on checkpoint-toast; red gate visually powered down. TEST 3 (W2-1 death/respawn via R key): PASS - pressed KeyR three times on Piston Alley, HUD showed '3 deaths', no soft-lock, ArrowRight controls responded afterward. No console errors or warnings during any test. Data-testid='level-card-<id>' from LevelSelect worked reliably for navigation. Skill-gated finish-flag completion on W2-4 was not automated (per request; developer unit tests cover solvability).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "GameScreen.tsx toast handling uses a single setTimeout with a shared toast slot — if 'Switch armed' fires <1.4s after 'Locked — wrong order!' it overwrites the denied toast before the user can read it. Not a correctness bug (both events emit) but for UX consider queuing toasts or a shorter denied-then-armed delay when player crosses both switches in one motion.",
+    "world2.ts w2-4 places both switches on the ground row with a fully-open corridor and no obstacle between them; a fast right-hold traverses both switches within ~1.5s. That means 'accidentally' arming them in-order can happen on the first run and the ordering puzzle can be trivially solved by walking right without ever going back. Consider adding a small gap or wall between the switches so the player must intentionally return to the near switch after arming the far one — otherwise the 'reverse-thinking' twist is not enforced by geometry.",
+    "GameScreen.tsx line 97: testid is derived from toast text (`toast === 'Gate opened!' ? 'gate-toast' : 'checkpoint-toast'`) — coupling test attribute to displayed copy is fragile. Prefer setting testid from the event type ('gateOpen'|'switchArmed'|'switchDenied'|'checkpoint') on the state, so localization/wording changes don't break tests."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "n/a (skipped)", "frontend": "100% of automatable scenarios (finish-flag completion intentionally not automated per request)"},
+  "test_credentials": "None (single-player local game).",
+  "seed_data_creation": "localStorage 'trapshift.save.v1' seeded with completed w1-1..w1-6 and w2-1..w2-3 to unlock w2-4 before navigating.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Preview URL: https://trapshift-deathfix.preview.emergentagent.com. Level cards now expose data-testid='level-card-<id>' (e.g. level-card-w2-4) — use these directly. Toast has TWO testids: 'gate-toast' when text is exactly 'Gate opened!', otherwise 'checkpoint-toast' (used for Checkpoint!, Switch armed, and Locked — wrong order!). Toasts auto-dismiss after 1400ms so poll every ~80ms during interaction. For W2-4 ordered-gate test: press ArrowRight briefly (~650ms) to touch near switch (x=6) first, then continue right (~1.4s) to far switch (x=13), then ArrowLeft (~1.6s) back to near — this reproduces the denied -> armed -> opened sequence cleanly."
+}

@@ -123,6 +123,7 @@ export class GameEngine {
   // (persists across deaths/respawns, only a fresh level instance resets it) so an
   // opened gate stays open — fair, never a soft-lock.
   switchState: Record<string, boolean> = {};
+  private switchDeniedCooldown = 0;
   lastLandingImpact = 0;
   onEvent?: (event: { type: string; data?: any }) => void;
   shakeMultiplier = 1;
@@ -292,6 +293,7 @@ export class GameEngine {
     if (this.status !== "playing") return;
     this.time += dt;
     if (this.respawnGrace > 0) this.respawnGrace = Math.max(0, this.respawnGrace - dt);
+    if (this.switchDeniedCooldown > 0) this.switchDeniedCooldown = Math.max(0, this.switchDeniedCooldown - dt);
     if (this.checkpointPulse) {
       this.checkpointPulse.life -= dt;
       if (this.checkpointPulse.life <= 0) this.checkpointPulse = null;
@@ -568,7 +570,8 @@ export class GameEngine {
   }
 
   isGateOpen(gateId: string): boolean {
-    return (this.level.switches ?? []).some((s) => s.gateId === gateId && this.switchState[s.id]);
+    const sw = (this.level.switches ?? []).filter((s) => s.gateId === gateId);
+    return sw.length > 0 && sw.every((s) => this.switchState[s.id]);
   }
 
   private updateMovingHazards(dt: number) {
@@ -720,14 +723,35 @@ export class GameEngine {
     for (const s of this.level.switches ?? []) {
       if (this.switchState[s.id]) continue;
       const rect = tileRect(s.x, s.y);
-      if (rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) {
-        this.switchState[s.id] = true;
-        sfx.portal();
-        this.spawnParticles(s.x * TILE + TILE / 2, s.y * TILE + TILE / 2, 16, "#39ffb0", 240, Math.PI * 2, "square");
-        this.cameraShake = 0.6 * this.shakeMultiplier;
+      if (!rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) continue;
+      // Ordered multi-switch gates: a switch only arms once every lower-order
+      // switch on the same gate is already armed. Pressing out of order gives a
+      // "locked" cue and changes nothing (fair — never a soft-lock).
+      const gateSwitches = (this.level.switches ?? []).filter((o) => o.gateId === s.gateId);
+      const ordered = gateSwitches.some((o) => o.order !== undefined);
+      if (ordered) {
+        const myOrder = s.order ?? 0;
+        const blocked = gateSwitches.some((o) => (o.order ?? 0) < myOrder && !this.switchState[o.id]);
+        if (blocked) {
+          if (this.switchDeniedCooldown <= 0) {
+            this.switchDeniedCooldown = 0.7;
+            sfx.fakeOut();
+            this.screenFlash = { color: "#ff3d5c", alpha: 0.2 };
+            this.emit("switchDenied", { id: s.id });
+          }
+          continue;
+        }
+      }
+      this.switchState[s.id] = true;
+      sfx.portal();
+      this.spawnParticles(s.x * TILE + TILE / 2, s.y * TILE + TILE / 2, 16, "#39ffb0", 240, Math.PI * 2, "square");
+      this.cameraShake = 0.6 * this.shakeMultiplier;
+      vibrate([12, 18]);
+      if (this.isGateOpen(s.gateId)) {
         this.screenFlash = { color: "#39ffb0", alpha: 0.25 };
-        vibrate([12, 18]);
-        this.emit("switch", { id: s.id, gateId: s.gateId });
+        this.emit("gateOpen", { gateId: s.gateId });
+      } else {
+        this.emit("switchArmed", { id: s.id });
       }
     }
   }

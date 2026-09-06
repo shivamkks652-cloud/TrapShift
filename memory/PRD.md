@@ -54,10 +54,13 @@ Existing Death/Respawn/Checkpoint/Finish/Save systems were reused unchanged:
 - testing_agent iteration_1: 6/6 automatable UI tests PASS (fall→respawn, repeated falls no soft-lock, R respawn, checkpoint pulse+toast+respawn-at-checkpoint). TEST 5 finish-flag not automatable (skill-gated) — covered by unit tests. No bugs/regressions/console errors.
 
 ## Backlog / Next
-- P1: Redesign World 2 (Voltgrid City) into puzzle levels (spec Levels 7-13).
-- P1: Continue World 3-7 puzzle redesign, escalating (misdirection, combinations, chaos).
-- P2: Node engine bump to >=22 if building the native Android AdMob shell.
-- P2: Add `typescript` as a devDependency so `yarn typecheck` runs (Vite/esbuild build is unaffected today).
+- P1: Redesign Worlds 3-7 into puzzle sets, escalating (misdirection, combinations, chaos rifts).
+- P2: Toast queue so a rapid 'Locked'->'armed' pair doesn't overwrite; derive toast testid from event type not copy.
+- P2: Node engine bump to >=22 for the native Android AdMob shell; add `typescript` devDep for `yarn typecheck`.
+
+## World 2 Puzzle Redesign (2026-06, Voltgrid City) — DONE
+Extended switch/gate to ORDERED multi-switch (Switch.order; isGateOpen now requires ALL switches armed; out-of-order press emits 'switchDenied' -> 'Locked — wrong order!' toast). 7 levels: w2-1 Piston Alley (moving-trap timing), w2-2 Swing Shift (moving platform/gap), w2-3 Backwards Alley (reverse zone + pit), w2-4 Double Lock (ORDERED two-switch gate — far switch first, backtrack to near), w2-5 Crossfire (laser+pit+piston combo), w2-6 Collapse Run (exploding-platform trap chain), w2-7 Voltgrid Gauntlet (laser+reverse+switch finale).
+Verified: headless controller proved all 7 physically solvable; death/respawn on each; ordered-gate logic (locked->arm->open) = 19/19. testing_agent iteration_3: ordered gate (Locked/armed/opened), single-switch regression, and death/respawn all PASS live, no console errors.
 
 ## World 1 Puzzle Redesign (2026-06, Neon Foundry) — DONE
 NEW switch->gate mechanic (types Switch/Gate; engine switchState/checkSwitches/isGateOpen + gates in collectSolids; render drawGate/drawSwitch; GameScreen 'Gate opened!' toast, data-testid=gate-toast). World 1 = 6 distinct brain-puzzles:
