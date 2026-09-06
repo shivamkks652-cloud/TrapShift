@@ -53,9 +53,20 @@ Existing Death/Respawn/Checkpoint/Finish/Save systems were reused unchanged:
 - Headless engine tests: 22/22 (all 6 acceptance cases + grace + swept-collision + all-42-level regression).
 - testing_agent iteration_1: 6/6 automatable UI tests PASS (fall→respawn, repeated falls no soft-lock, R respawn, checkpoint pulse+toast+respawn-at-checkpoint). TEST 5 finish-flag not automatable (skill-gated) — covered by unit tests. No bugs/regressions/console errors.
 
+## Full-Game Difficulty Pass (2026-06) — DONE (all 7 worlds, 43 story levels)
+User asked to raise difficulty/obstacles across the WHOLE game — tough but fair, no bugs. Delivered:
+- Worlds 4-7 were BROKEN (a 20-tile un-crossable pit placeholder) and are now fully rebuilt into solvable, obstacle-dense puzzle levels; Worlds 1-3 hardened (more obstacles, faster hazards, longer 30-col corridors, fewer checkpoints, new combos). World 3 kept its puzzle set + mimic speed bump.
+- W4 Singularity Core: gravity-flip (ceiling walk), rotating arms, decoy exits, mimics, reverse combos.
+- W5 Dark Reactor: telegraphed steam-jet gauntlets + dark stretch + synced beam finale.
+- W6 Cyber Core: charging/sweeping firewalls, double sweeps, mimic + synced beam finale.
+- W7 Chaos Rift: rifts (random gravity-flip OR reverse per attempt) ALWAYS over solid ground (both effects survivable) + every prior hazard.
+- Engine fairness fix (all worlds): respawn() resets crumbling platforms to solid.
+- Levels now 30 cols wide (W3=26), 7 rows tall, camera scrolls horizontally (verified render OK on gravity level).
+Verification: headless harness `tools_test/all_test.ts` (run: `node tools_test/run.mjs tools_test/all_test.ts [filter]`) = ALL 43 levels pass (uniform row widths, below-grid fall->death+respawn on every level, gravity/reverse/ordered-switch-aware auto-bot reaches/completes the exit on every level). testing_agent iteration_5: all 43 level cards render/clickable across 7 worlds, 15+ levels loaded non-blank with ZERO console errors, death/respawn never soft-locks, checkpoint-toast (w1-2) + gate-toast (w1-6) fire, gravity/fake-exit/reverse/steam/firewall/rift all render, w1-1 completed E2E with progression saved.
+
 ## Backlog / Next
-- P1: Redesign Worlds 4-7 into puzzle sets, escalating (misdirection, combinations, chaos rifts).
 - P2: Toast queue so a rapid 'Locked'->'armed' pair doesn't overwrite; derive toast testid from event type not copy (GameScreen.tsx line 97).
+- P2: Optional per-level hint icon; widen w1-1 shard placement so 3-star requires intentional shard collection.
 
 ## World 3 Puzzle Redesign (2026-06, The Undergate) — DONE
 6 distinct brain-puzzles using the world's signature mechanics (freeze fields, dark memory-bridge, crumbling platforms, mimics) + switch/gate:

@@ -138,8 +138,8 @@ export const world3: LevelDef[] = [
     playerStart: { x: 2, y: 5 },
     exit: { x: 24, y: 5 },
     mimicEnemies: [
-      { id: "m1", x: 11, y: 5, triggerRadius: 3, lungeSpeed: 240 },
-      { id: "m2", x: 18, y: 5, triggerRadius: 3, lungeSpeed: 260 },
+      { id: "m1", x: 11, y: 5, triggerRadius: 3, lungeSpeed: 260 },
+      { id: "m2", x: 18, y: 5, triggerRadius: 3, lungeSpeed: 275 },
     ],
     checkpoints: [{ id: "c1", x: 6, y: 5 }],
     shards: [{ id: "s1", x: 15, y: 3 }],
