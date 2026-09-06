@@ -53,6 +53,14 @@ Existing Death/Respawn/Checkpoint/Finish/Save systems were reused unchanged:
 - Headless engine tests: 22/22 (all 6 acceptance cases + grace + swept-collision + all-42-level regression).
 - testing_agent iteration_1: 6/6 automatable UI tests PASS (fall→respawn, repeated falls no soft-lock, R respawn, checkpoint pulse+toast+respawn-at-checkpoint). TEST 5 finish-flag not automatable (skill-gated) — covered by unit tests. No bugs/regressions/console errors.
 
+## Branding + Play Store Asset Pack (2026-06) — DONE
+Neon identity (cyan #4bf3ff + magenta #ff3df0 on #020814). Generated + composited via PIL:
+- App icon (512 + 1024, opaque), adaptive icon foreground/background, splash 2732 — Capacitor sources in `/app/frontend/assets/` (generate natively with `npx @capacitor/assets generate --android`, needs Node>=22 locally; see assets/README.md).
+- Play Store pack in `/app/store_assets/`: app_icon_512, feature_graphic_1024x500, logo wordmark + emblem (transparent), splash preview, screenshots/ (phone 1920x1080 x5, tablet7 2048x1200 x4, tablet10 2560x1600 x4), plus README.md with listing copy.
+- Web: public/ PNG icons (32/180/192/512) + manifest.webmanifest + og-image; index.html meta/OG/apple-touch/manifest updated.
+- In-app: MainMenu now shows the neon emblem logo (data-testid=main-menu-logo) above the wordmark.
+Verified: typecheck clean, app serves 200, manifest + icon-512 reachable, menu renders logo (mobile screenshot).
+
 ## Full-Game Difficulty Pass (2026-06) — DONE (all 7 worlds, 43 story levels)
 User asked to raise difficulty/obstacles across the WHOLE game — tough but fair, no bugs. Delivered:
 - Worlds 4-7 were BROKEN (a 20-tile un-crossable pit placeholder) and are now fully rebuilt into solvable, obstacle-dense puzzle levels; Worlds 1-3 hardened (more obstacles, faster hazards, longer 30-col corridors, fewer checkpoints, new combos). World 3 kept its puzzle set + mimic speed bump.

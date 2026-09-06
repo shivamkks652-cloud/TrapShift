@@ -1,6 +1,7 @@
 import { Play, Infinity as InfinityIcon, CalendarDays, Shirt, Volume2, VolumeX, Zap, Settings } from "lucide-react";
 import { loadSave } from "@/game/storage";
 import { useEffect, useState } from "react";
+import logoEmblem from "@/assets/logo-emblem.png";
 
 interface Props {
   onPlay: () => void;
@@ -23,7 +24,14 @@ export default function MainMenu({ onPlay, onEndless, onDaily, onSkins, onSettin
     <div className="relative w-full h-full flex flex-col items-center justify-between px-6 py-10 overflow-hidden bg-gradient-to-b from-[#0b1026] via-[#150826] to-[#020814]">
       <BackgroundGlow />
 
-      <div className="relative flex flex-col items-center mt-8 gap-2">
+      <div className="relative flex flex-col items-center mt-8 gap-2" data-testid="main-menu-branding">
+        <img
+          src={logoEmblem}
+          alt="TrapShift emblem"
+          className="w-24 h-24 mb-1 drop-shadow-[0_0_24px_rgba(75,243,255,0.5)] animate-pulse"
+          style={{ animationDuration: "3s" }}
+          data-testid="main-menu-logo"
+        />
         <h1 className="text-5xl font-black tracking-tighter text-white drop-shadow-[0_0_20px_rgba(75,243,255,0.6)]">
           TRAP<span className="text-cyan-400">SHIFT</span>
         </h1>

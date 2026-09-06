@@ -1,0 +1,15 @@
+{
+  "name": "TrapShift",
+  "short_name": "TrapShift",
+  "description": "Nothing is what it looks like. A neon puzzle-platformer: think first, then shift.",
+  "start_url": "/",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#020814",
+  "theme_color": "#020814",
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
