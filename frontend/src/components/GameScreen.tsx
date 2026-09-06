@@ -71,6 +71,7 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
   function handleEvent(type: string) {
     if (type === "shard") setShardsCollected((s) => s + 1);
     else if (type === "checkpoint") showToast("Checkpoint!");
+    else if (type === "switch") showToast("Gate opened!");
   }
 
   const nextLevelId = getNextLevelId(level.id);
@@ -91,7 +92,7 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
       )}
       {toast && phase === "playing" && (
         <div
-          data-testid="checkpoint-toast"
+          data-testid={toast === "Gate opened!" ? "gate-toast" : "checkpoint-toast"}
           className="pointer-events-none absolute top-20 inset-x-0 z-20 flex justify-center"
         >
           <div className="animate-in fade-in slide-in-from-top-2 duration-200 flex items-center gap-2 rounded-full bg-cyan-400/15 backdrop-blur-md border border-cyan-300/40 px-5 py-2 text-cyan-200 font-semibold text-sm shadow-[0_0_24px_rgba(75,243,255,0.35)]">

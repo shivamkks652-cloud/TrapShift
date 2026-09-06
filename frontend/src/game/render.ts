@@ -283,6 +283,15 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
   }
 
   // fake checkpoints / fake exits (visually identical to real ones until touched)
+  // gates + pressure switches (cause -> effect). A gate is a solid barrier until a
+  // linked switch is pressed, then it powers down and becomes passable.
+  for (const g of engine.level.gates ?? []) {
+    drawGate(ctx, g.x, g.y, g.w, g.h, engine.isGateOpen(g.id), worldAccent, dangerColor, frame);
+  }
+  for (const s of engine.level.switches ?? []) {
+    drawSwitch(ctx, s.x, s.y, !!engine.switchState[s.id], frame);
+  }
+
   for (const c of engine.level.checkpoints ?? []) {
     drawBeacon(ctx, c.x * TILE + TILE / 2, c.y * TILE, worldAccent, engine.activeCheckpoint?.x === c.x);
   }
@@ -925,6 +934,83 @@ function drawChaosRift(
     ctx.fillRect(-3, -8, 6, 16);
     ctx.restore();
   }
+  ctx.shadowBlur = 0;
+  ctx.restore();
+}
+
+function drawGate(
+  ctx: CanvasRenderingContext2D,
+  gx: number,
+  gy: number,
+  gw: number,
+  gh: number,
+  open: boolean,
+  accent: string,
+  danger: string,
+  frame: number,
+) {
+  const x = gx * TILE;
+  const y = gy * TILE;
+  const w = gw * TILE;
+  const h = gh * TILE;
+  ctx.save();
+  if (open) {
+    // powered-down: faint dashed frame + retracted emitters top & bottom
+    ctx.globalAlpha = 0.22;
+    ctx.strokeStyle = accent;
+    ctx.setLineDash([4, 6]);
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + w * 0.15, y + 2, w * 0.7, h - 4);
+    ctx.setLineDash([]);
+    ctx.globalAlpha = 1;
+  } else {
+    // solid energy barrier
+    const grad = ctx.createLinearGradient(x, y, x, y + h);
+    grad.addColorStop(0, danger + "cc");
+    grad.addColorStop(1, danger + "66");
+    ctx.fillStyle = grad;
+    ctx.fillRect(x + w * 0.18, y, w * 0.64, h);
+    ctx.strokeStyle = "#ffffffaa";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + w * 0.18, y, w * 0.64, h);
+    // scrolling energy bars
+    ctx.strokeStyle = "#ffffff";
+    for (let i = 0; i < gh * 2; i++) {
+      const by = y + ((i * TILE * 0.5 + (frame % 30) / 30 * TILE * 0.5) % h);
+      ctx.globalAlpha = 0.35;
+      ctx.beginPath();
+      ctx.moveTo(x + w * 0.18, by);
+      ctx.lineTo(x + w * 0.82, by);
+      ctx.stroke();
+    }
+    ctx.globalAlpha = 1;
+  }
+  ctx.restore();
+}
+
+function drawSwitch(ctx: CanvasRenderingContext2D, sx: number, sy: number, pressed: boolean, frame: number) {
+  const x = sx * TILE;
+  const y = sy * TILE;
+  const cx = x + TILE / 2;
+  const baseY = y + TILE - 6;
+  const col = pressed ? "#39ffb0" : "#ffb23d";
+  ctx.save();
+  // glow pad
+  ctx.fillStyle = col + "2a";
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.ellipse(cx, baseY, TILE * 0.36, TILE * 0.15, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.stroke();
+  // button
+  const bh = pressed ? 4 : 12 + Math.sin(frame / 12) * 2;
+  ctx.fillStyle = col;
+  ctx.shadowColor = col;
+  ctx.shadowBlur = 14;
+  ctx.beginPath();
+  ctx.roundRect(cx - TILE * 0.2, baseY - bh, TILE * 0.4, bh, 3);
+  ctx.fill();
   ctx.shadowBlur = 0;
   ctx.restore();
 }

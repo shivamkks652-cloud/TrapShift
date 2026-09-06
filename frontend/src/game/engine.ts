@@ -119,6 +119,10 @@ export class GameEngine {
   steamVentState: Record<string, SteamVentState> = {};
   firewallState: Record<string, FirewallState> = {};
   chaosRiftEffect: Record<string, ChaosEffect> = {};
+  // Pressure-switch state. Once pressed it stays pressed for the whole attempt
+  // (persists across deaths/respawns, only a fresh level instance resets it) so an
+  // opened gate stays open — fair, never a soft-lock.
+  switchState: Record<string, boolean> = {};
   lastLandingImpact = 0;
   onEvent?: (event: { type: string; data?: any }) => void;
   shakeMultiplier = 1;
@@ -166,6 +170,7 @@ export class GameEngine {
     // one of the two, and it is always safe (never lethal on its own).
     for (const c of level.chaosRifts ?? [])
       this.chaosRiftEffect[c.id] = Math.random() < 0.5 ? "gravity" : "reverse";
+    for (const s of level.switches ?? []) this.switchState[s.id] = false;
   }
 
   private rows() {
@@ -421,6 +426,9 @@ export class GameEngine {
     this.checkCheckpoints();
     this.checkFakeCheckpoints();
 
+    // pressure switches (open linked gates)
+    this.checkSwitches();
+
     // shards
     this.checkShards();
 
@@ -546,7 +554,21 @@ export class GameEngine {
         rects.push(tileRect(bt.x, bt.y));
       }
     }
+
+    // gates: solid barrier tiles until a linked switch is pressed
+    for (const g of this.level.gates ?? []) {
+      if (this.isGateOpen(g.id)) continue;
+      for (let ty = 0; ty < g.h; ty++) {
+        for (let tx = 0; tx < g.w; tx++) {
+          rects.push(tileRect(g.x + tx, g.y + ty));
+        }
+      }
+    }
     return rects;
+  }
+
+  isGateOpen(gateId: string): boolean {
+    return (this.level.switches ?? []).some((s) => s.gateId === gateId && this.switchState[s.id]);
   }
 
   private updateMovingHazards(dt: number) {
@@ -690,6 +712,22 @@ export class GameEngine {
       if (rectsOverlap(playerRect, rect)) {
         this.die("firewall");
         return;
+      }
+    }
+  }
+
+  private checkSwitches() {
+    for (const s of this.level.switches ?? []) {
+      if (this.switchState[s.id]) continue;
+      const rect = tileRect(s.x, s.y);
+      if (rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) {
+        this.switchState[s.id] = true;
+        sfx.portal();
+        this.spawnParticles(s.x * TILE + TILE / 2, s.y * TILE + TILE / 2, 16, "#39ffb0", 240, Math.PI * 2, "square");
+        this.cameraShake = 0.6 * this.shakeMultiplier;
+        this.screenFlash = { color: "#39ffb0", alpha: 0.25 };
+        vibrate([12, 18]);
+        this.emit("switch", { id: s.id, gateId: s.gateId });
       }
     }
   }

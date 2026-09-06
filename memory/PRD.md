@@ -41,7 +41,6 @@ Existing Death/Respawn/Checkpoint/Finish/Save systems were reused unchanged:
 
 ## Status
 - [x] Fall/death detection on every level
-- [x] Respawn at start (no checkpoint) / latest checkpoint (with checkpoint), velocity reset
 - [x] Checkpoints activate + latest-wins on all levels
 - [x] Tile collision (player stands on solids)
 - [x] Level completion → unlock next → save (unchanged, verified)
@@ -55,5 +54,12 @@ Existing Death/Respawn/Checkpoint/Finish/Save systems were reused unchanged:
 - testing_agent iteration_1: 6/6 automatable UI tests PASS (fall→respawn, repeated falls no soft-lock, R respawn, checkpoint pulse+toast+respawn-at-checkpoint). TEST 5 finish-flag not automatable (skill-gated) — covered by unit tests. No bugs/regressions/console errors.
 
 ## Backlog / Next
+- P1: Redesign World 2 (Voltgrid City) into puzzle levels (spec Levels 7-13).
+- P1: Continue World 3-7 puzzle redesign, escalating (misdirection, combinations, chaos).
 - P2: Node engine bump to >=22 if building the native Android AdMob shell.
 - P2: Add `typescript` as a devDependency so `yarn typecheck` runs (Vite/esbuild build is unaffected today).
+
+## World 1 Puzzle Redesign (2026-06, Neon Foundry) — DONE
+NEW switch->gate mechanic (types Switch/Gate; engine switchState/checkSwitches/isGateOpen + gates in collectSolids; render drawGate/drawSwitch; GameScreen 'Gate opened!' toast, data-testid=gate-toast). World 1 = 6 distinct brain-puzzles:
+- w1-1 First Steps (LEARN run+jump) | w1-2 Rhythm Gate (TIMING, 2 offset laser gates) | w1-3 Watch Your Step (FAKE tiles/observe) | w1-4 Two Roads (CHOICE stones vs bold shard) | w1-5 Blind Bridge (MEMORY hidden dark-zone bridge) | w1-6 The Lever (SWITCH opens energy gate).
+Verified: headless informed-bot proved all 6 physically solvable (0 deaths); death/respawn + checkpoint + switch->gate(persist) + exit/progression = 21/21. testing_agent iteration_2: death/respawn, checkpoint-respawn, switch->gate all PASS live, no console errors. Level-select cards now have data-testid=level-card-<id>.

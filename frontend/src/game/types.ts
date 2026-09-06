@@ -147,6 +147,23 @@ export interface ChaosRift extends RectZone {
   id: string;
 }
 
+// Pressure switch + gate (cause -> effect). Stepping on a switch powers down every
+// gate whose id it references, turning that gate's tiles from solid to passable.
+export interface Switch {
+  id: string;
+  x: number; // tile coords (stand on it to activate)
+  y: number;
+  gateId: string; // id of the gate this switch opens
+}
+
+export interface Gate {
+  id: string;
+  x: number; // tile coords of the gate's top-left
+  y: number;
+  w: number; // width in tiles
+  h: number; // height in tiles
+}
+
 export interface Checkpoint {
   id: string;
   x: number;
@@ -192,6 +209,8 @@ export interface LevelDef {
   rotatingPlatforms?: RotatingPlatform[];
   fakeCheckpoints?: FakeCheckpoint[];
   fakeExits?: FakeExit[];
+  switches?: Switch[];
+  gates?: Gate[];
   mimicEnemies?: MimicEnemy[];
   steamVents?: SteamVent[];
   firewallSweeps?: FirewallSweep[];

@@ -36,6 +36,7 @@ export default function LevelSelect({ worldId, onBack, onSelectLevel }: Props) {
           return (
             <button
               key={l.id}
+              data-testid={`level-card-${l.id}`}
               disabled={!unlocked}
               onClick={() => unlocked && onSelectLevel(l.id)}
               className="aspect-square rounded-2xl flex flex-col items-center justify-center gap-1 border disabled:opacity-40 active:scale-95 transition-transform"
