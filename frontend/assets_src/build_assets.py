@@ -42,33 +42,15 @@ def paste_center(canvas, img, scale_w):
     canvas.alpha_composite(im, ((w - nw) // 2, (h - nh) // 2))
 
 # ---------- source pieces ----------
-icon_fg_raw = load("icon_fg.jpg")
+icon_fg_raw = load("emblem_clean.jpg")
 icon_bg = load("icon_bg.jpg")
-logo_t = key_dark_to_alpha(load("logo.jpg"), lo=26, hi=100)
+logo_t = key_dark_to_alpha(load("wordmark_clean.jpg"), lo=16, hi=64)
 feature = load("feature.jpg")
 splash_art = load("splash.jpg")
 
-# transparent emblem (for adaptive foreground / overlays) — high threshold so only
-# the bright neon strokes+glow survive and the jpeg's dark haze is cut cleanly.
-emblem = key_dark_to_alpha(icon_fg_raw, lo=52, hi=140)
-# radial mask: keep the centred emblem+glow, zero out stray edge/corner haze.
-import math
-from PIL import ImageChops
-_mw, _mh = emblem.size
-_mask = Image.new("L", emblem.size, 0)
-_mp = _mask.load()
-_cx, _cy = _mw / 2, _mh / 2
-_full, _fade = 0.42 * _mw, 0.56 * _mw
-for _y in range(_mh):
-    for _x in range(_mw):
-        _d = math.hypot(_x - _cx, _y - _cy)
-        if _d <= _full:
-            _mp[_x, _y] = 255
-        elif _d >= _fade:
-            _mp[_x, _y] = 0
-        else:
-            _mp[_x, _y] = int((_fade - _d) / (_fade - _full) * 255)
-emblem.putalpha(ImageChops.multiply(emblem.split()[3], _mask))
+# transparent emblem (for adaptive foreground / overlays) — emblem is bright neon on
+# PURE BLACK, so a simple luminance key gives a clean cutout with no artifacts.
+emblem = key_dark_to_alpha(icon_fg_raw, lo=16, hi=64)
 emblem.save(os.path.join(STORE, "logo_emblem_transparent.png"))
 logo_t.save(os.path.join(STORE, "logo_wordmark_transparent.png"))
 

@@ -12,7 +12,21 @@ glow on a deep near-black cyber background (#020814 / #0b1026).
 - `logo_emblem_transparent.png` — icon-only shift emblem (transparent PNG).
 
 ### Feature graphic
-- `feature_graphic_1024x500.png` — **1024×500** Play Store feature graphic.
+- `feature_graphic_1024x500.png` — **1024×500** Play Store feature graphic (key art + logo + tagline).
+
+### Icon previews (how it looks masked)
+- `icon_preview_circle.png`, `icon_preview_squircle.png` — 1024 masked previews.
+
+### Promo
+- `promo.gif` — short looping slideshow of the screenshots (for social/store preview; Play Store's promo-video slot needs a YouTube link).
+
+### Android icon kit (fixes the default-icon problem)
+- See `/app/frontend/android-icon-kit/` — a drop-in `res/` tree (all mipmap densities +
+  adaptive icon XML + background color). Copy it over your local
+  `frontend/android/app/src/main/res/` and rebuild — no tooling needed. Full steps in
+  that folder's `README.md`.
+
+### Feature graphic
 
 ### Splash / marketing
 - `splash_preview_1080x1920.png` — portrait splash/marketing render.

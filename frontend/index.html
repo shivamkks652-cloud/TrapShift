@@ -24,7 +24,35 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
   </head>
   <body>
+    <style>
+      #boot-splash{position:fixed;inset:0;z-index:9999;display:flex;flex-direction:column;
+        align-items:center;justify-content:center;gap:18px;
+        background:radial-gradient(120% 120% at 50% 35%,#150826 0%,#0b1026 45%,#020814 100%);
+        transition:opacity .5s ease;}
+      #boot-splash.hide{opacity:0;pointer-events:none;}
+      #boot-splash img{width:128px;height:128px;filter:drop-shadow(0 0 26px rgba(75,243,255,.55));
+        animation:bootpulse 1.6s ease-in-out infinite;}
+      #boot-splash .bs-title{font-family:Inter,system-ui,sans-serif;font-weight:800;letter-spacing:-1px;
+        font-size:30px;color:#fff;text-shadow:0 0 18px rgba(75,243,255,.5);}
+      #boot-splash .bs-title b{color:#4bf3ff;}
+      #boot-splash .bs-sub{font-family:Inter,system-ui,sans-serif;font-size:12px;color:rgba(255,255,255,.45);
+        letter-spacing:2px;text-transform:uppercase;}
+      @keyframes bootpulse{0%,100%{transform:scale(1);opacity:.92}50%{transform:scale(1.08);opacity:1}}
+    </style>
+    <div id="boot-splash">
+      <img src="/emblem.png" alt="TrapShift" />
+      <div class="bs-title">TRAP<b>SHIFT</b></div>
+      <div class="bs-sub">nothing is what it looks like</div>
+    </div>
     <div id="root"></div>
+    <script>
+      (function(){
+        function hide(){var s=document.getElementById('boot-splash');
+          if(s){s.classList.add('hide');setTimeout(function(){s&&s.remove();},600);}}
+        window.addEventListener('load',function(){setTimeout(hide,700);});
+        setTimeout(hide,3500); // safety fallback
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
