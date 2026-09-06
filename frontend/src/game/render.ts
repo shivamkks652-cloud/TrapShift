@@ -286,6 +286,27 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
   for (const c of engine.level.checkpoints ?? []) {
     drawBeacon(ctx, c.x * TILE + TILE / 2, c.y * TILE, worldAccent, engine.activeCheckpoint?.x === c.x);
   }
+  // bright expanding "just saved" pulse the instant a checkpoint activates
+  if (engine.checkpointPulse) {
+    const cp = engine.checkpointPulse;
+    const t = 1 - cp.life / cp.maxLife; // 0..1
+    const cx = cp.x * TILE + TILE / 2;
+    const cy = cp.y * TILE + TILE * 0.5;
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, 1 - t);
+    ctx.strokeStyle = worldAccent;
+    ctx.shadowColor = worldAccent;
+    ctx.shadowBlur = 24;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 8 + t * 46, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.globalAlpha = Math.max(0, 0.6 - t * 0.6);
+    ctx.beginPath();
+    ctx.arc(cx, cy, 4 + t * 24, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
   for (const c of engine.level.fakeCheckpoints ?? []) {
     const revealed = engine.fakeCheckpointPulses.includes(c.id);
     drawBeacon(ctx, c.x * TILE + TILE / 2, c.y * TILE, revealed ? dangerColor : worldAccent, false);

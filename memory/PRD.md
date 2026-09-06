@@ -46,7 +46,14 @@ Existing Death/Respawn/Checkpoint/Finish/Save systems were reused unchanged:
 - [x] Tile collision (player stands on solids)
 - [x] Level completion → unlock next → save (unchanged, verified)
 - [x] Tunnel/below-grid safety net via fall boundary
+- [x] Checkpoint Beacons: expanding pulse ring (render.ts) + "Checkpoint!" toast (GameScreen, data-testid=checkpoint-toast)
+- [x] Coyote Landing: 0.5s respawnGrace suppresses hazard re-death at spawn; fall boundary NEVER suppressed
+- [x] Swept/continuous collision: moveAxis sub-steps at ≤0.5 tile (resolveAxis) so fast falls can't clip thin platforms
+
+## Verification (updated)
+- Headless engine tests: 22/22 (all 6 acceptance cases + grace + swept-collision + all-42-level regression).
+- testing_agent iteration_1: 6/6 automatable UI tests PASS (fall→respawn, repeated falls no soft-lock, R respawn, checkpoint pulse+toast+respawn-at-checkpoint). TEST 5 finish-flag not automatable (skill-gated) — covered by unit tests. No bugs/regressions/console errors.
 
 ## Backlog / Next
-- P2: Continuous (swept) collision to prevent rare high-speed tunnelling (currently caught by fall boundary).
 - P2: Node engine bump to >=22 if building the native Android AdMob shell.
+- P2: Add `typescript` as a devDependency so `yarn typecheck` runs (Vite/esbuild build is unaffected today).

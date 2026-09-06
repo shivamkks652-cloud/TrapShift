@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import GameCanvas from "./GameCanvas";
 import HUD from "./HUD";
 import PauseOverlay from "./PauseOverlay";
@@ -23,10 +23,21 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
   const [restartSignal, setRestartSignal] = useState(0);
   const [result, setResult] = useState<{ timeMs: number; shardsCollected: number; shardsTotal: number; stars: 1 | 2 | 3 } | null>(null);
   const [muted, setMutedState] = useState(isMuted());
+  const [toast, setToast] = useState<string | null>(null);
+  const toastTimer = useRef<number | null>(null);
+
+  function showToast(msg: string) {
+    setToast(msg);
+    if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    toastTimer.current = window.setTimeout(() => setToast(null), 1400);
+  }
 
   useEffect(() => {
     startMusic(level.world);
-    return () => stopMusic();
+    return () => {
+      stopMusic();
+      if (toastTimer.current) window.clearTimeout(toastTimer.current);
+    };
   }, [level.world, level.id]);
 
   useEffect(() => {
@@ -59,6 +70,7 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
 
   function handleEvent(type: string) {
     if (type === "shard") setShardsCollected((s) => s + 1);
+    else if (type === "checkpoint") showToast("Checkpoint!");
   }
 
   const nextLevelId = getNextLevelId(level.id);
@@ -76,6 +88,17 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
       />
       {phase === "playing" && (
         <HUD level={level} shardsCollected={shardsCollected} elapsed={elapsed} deaths={deaths} onPause={() => setPhase("paused")} />
+      )}
+      {toast && phase === "playing" && (
+        <div
+          data-testid="checkpoint-toast"
+          className="pointer-events-none absolute top-20 inset-x-0 z-20 flex justify-center"
+        >
+          <div className="animate-in fade-in slide-in-from-top-2 duration-200 flex items-center gap-2 rounded-full bg-cyan-400/15 backdrop-blur-md border border-cyan-300/40 px-5 py-2 text-cyan-200 font-semibold text-sm shadow-[0_0_24px_rgba(75,243,255,0.35)]">
+            <span className="inline-block w-2 h-2 rounded-full bg-cyan-300 shadow-[0_0_10px_rgba(75,243,255,0.9)]" />
+            {toast}
+          </div>
+        </div>
       )}
       {phase === "intro" && <LevelIntro level={level} onStart={() => setPhase("playing")} />}
       {phase === "paused" && (

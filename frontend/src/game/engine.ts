@@ -101,6 +101,11 @@ export class GameEngine {
   shardsCollected = new Set<string>();
   collectedShardIds: string[] = [];
   activeCheckpoint: { x: number; y: number } | null = null;
+  // Expanding "just saved" pulse shown at the beacon the instant it activates (render-only).
+  checkpointPulse: { x: number; y: number; life: number; maxLife: number } | null = null;
+  // Brief post-respawn grace so the player can't instantly re-die to a hazard sitting
+  // right at the spawn/checkpoint. The fall/death boundary is never suppressed by this.
+  respawnGrace = 0;
   particles: Particle[] = [];
   cameraShake = 0;
   squash = 0; // -1..1 for squash/stretch visual, engine tracks landing impact
@@ -281,6 +286,11 @@ export class GameEngine {
   update(dt: number, input: InputState) {
     if (this.status !== "playing") return;
     this.time += dt;
+    if (this.respawnGrace > 0) this.respawnGrace = Math.max(0, this.respawnGrace - dt);
+    if (this.checkpointPulse) {
+      this.checkpointPulse.life -= dt;
+      if (this.checkpointPulse.life <= 0) this.checkpointPulse = null;
+    }
 
     // update particles
     this.particles = this.particles.filter((p) => p.life > 0);
@@ -466,15 +476,32 @@ export class GameEngine {
   }
 
   private moveAxis(axis: "x" | "y", delta: number) {
-    if (axis === "x") this.player.x += delta;
-    else this.player.y += delta;
+    // Swept / continuous collision: advance in sub-steps no larger than half a tile so a
+    // very fast fall (or fast horizontal move) can never skip straight through a thin
+    // platform in a single frame. At normal speeds this is a single step, identical to
+    // the original resolve. The fall/death boundary in update() remains the ultimate
+    // safety net regardless.
+    const dir = Math.sign(delta);
+    if (dir === 0) return;
+    const maxStep = TILE * 0.5;
+    let remaining = Math.abs(delta);
+    while (remaining > 0) {
+      const stepMag = Math.min(maxStep, remaining);
+      const step = stepMag * dir;
+      if (axis === "x") this.player.x += step;
+      else this.player.y += step;
+      remaining -= stepMag;
+      if (this.resolveAxis(axis, step)) break; // hit something solid, velocity already zeroed
+    }
+  }
 
+  private resolveAxis(axis: "x" | "y", delta: number): boolean {
     const solids = this.collectSolids();
-    const p = () => ({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h });
-
+    let collided = false;
     for (const s of solids) {
-      if (!rectsOverlap(p(), s)) continue;
-      const player = p();
+      const player = { x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h };
+      if (!rectsOverlap(player, s)) continue;
+      collided = true;
       if (axis === "x") {
         if (delta > 0) this.player.x = s.x - player.w;
         else if (delta < 0) this.player.x = s.x + s.w;
@@ -491,6 +518,7 @@ export class GameEngine {
         }
       }
     }
+    return collided;
   }
 
   private collectSolids(): Rect[] {
@@ -672,6 +700,7 @@ export class GameEngine {
       if (rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) {
         if (!this.activeCheckpoint || this.activeCheckpoint.x !== c.x || this.activeCheckpoint.y !== c.y) {
           this.activeCheckpoint = { x: c.x, y: c.y };
+          this.checkpointPulse = { x: c.x, y: c.y, life: 0.9, maxLife: 0.9 };
           sfx.checkpoint();
           this.emit("checkpoint");
         }
@@ -804,6 +833,10 @@ export class GameEngine {
 
   die(cause: string) {
     if (this.status !== "playing") return;
+    // Post-respawn grace: ignore hazard deaths for a brief window so the player isn't
+    // instantly killed by a trap right at the spawn/checkpoint. Falling off the level
+    // ("fell") and the manual retry ("manual") always kill, so nothing can soft-lock.
+    if (this.respawnGrace > 0 && cause !== "fell" && cause !== "manual") return;
     this.status = "dead";
     this.deaths++;
     this.lastDeathCause = cause;
@@ -873,6 +906,7 @@ export class GameEngine {
     this.player.vx = 0;
     this.player.vy = 0;
     this.player.onGround = false;
+    this.respawnGrace = 0.5;
     this.status = "playing";
   }
 }
