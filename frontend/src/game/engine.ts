@@ -969,6 +969,9 @@ export class GameEngine {
     this.player.vy = 0;
     this.player.onGround = false;
     this.respawnGrace = 0.5;
+    // Reset crumbling platforms to solid so the player never respawns onto a slab
+    // that is mid-collapse and dies again through no fault of their own (fair respawn).
+    for (const e of this.level.explodingPlatforms ?? []) this.explosionState[e.id] = { exploded: false, timer: 0 };
     this.status = "playing";
   }
 }

@@ -54,9 +54,19 @@ Existing Death/Respawn/Checkpoint/Finish/Save systems were reused unchanged:
 - testing_agent iteration_1: 6/6 automatable UI tests PASS (fall→respawn, repeated falls no soft-lock, R respawn, checkpoint pulse+toast+respawn-at-checkpoint). TEST 5 finish-flag not automatable (skill-gated) — covered by unit tests. No bugs/regressions/console errors.
 
 ## Backlog / Next
-- P1: Redesign Worlds 3-7 into puzzle sets, escalating (misdirection, combinations, chaos rifts).
-- P2: Toast queue so a rapid 'Locked'->'armed' pair doesn't overwrite; derive toast testid from event type not copy.
-- P2: Node engine bump to >=22 for the native Android AdMob shell; add `typescript` devDep for `yarn typecheck`.
+- P1: Redesign Worlds 4-7 into puzzle sets, escalating (misdirection, combinations, chaos rifts).
+- P2: Toast queue so a rapid 'Locked'->'armed' pair doesn't overwrite; derive toast testid from event type not copy (GameScreen.tsx line 97).
+
+## World 3 Puzzle Redesign (2026-06, The Undergate) — DONE
+6 distinct brain-puzzles using the world's signature mechanics (freeze fields, dark memory-bridge, crumbling platforms, mimics) + switch/gate:
+- w3-1 Cold Open (FREEZE — freeze the beam while it's off, tightened zone x11 w4, beam onTime1.4/offTime0.5)
+- w3-2 Blind Descent (MEMORY — invisible dark bridge with 2 missing planks)
+- w3-3 Don't Linger (CRUMBLING chain over a pit)
+- w3-4 The Sleeper (MIMIC — two lunging crates, leap them & outrun)
+- w3-5 Deep Freeze (COMBINATION — freeze stops the beam but not the crumble)
+- w3-6 The Undergate (FINALE — clean gap opener, checkpoint, switch opens a gate while a mimic guards it)
+Engine fairness fix (all worlds): respawn() now resets every explodingPlatform to solid so the player never respawns onto a mid-collapse slab and dies again.
+Verified: headless harness tools_test/w3_test.ts (run: `node tools_test/run.mjs tools_test/w3_test.ts`) = all rows 26-wide, below-grid fall->death+respawn on all 6, auto-bot completes all 6 (3/3 stable). testing_agent iteration_4: all 6 level cards render/clickable, every level loads, checkpoint-toast (w3-2) + gate-toast (w3-6) fire, mimics render/wake, freeze+beam+crumble render, death/respawn stable across 12+ repeated deaths (no soft-lock, no stuck-below-tiles), w3-1 completed end-to-end w/ progression saved, no console errors.
 
 ## World 2 Puzzle Redesign (2026-06, Voltgrid City) — DONE
 Extended switch/gate to ORDERED multi-switch (Switch.order; isGateOpen now requires ALL switches armed; out-of-order press emits 'switchDenied' -> 'Locked — wrong order!' toast). 7 levels: w2-1 Piston Alley (moving-trap timing), w2-2 Swing Shift (moving platform/gap), w2-3 Backwards Alley (reverse zone + pit), w2-4 Double Lock (ORDERED two-switch gate — far switch first, backtrack to near), w2-5 Crossfire (laser+pit+piston combo), w2-6 Collapse Run (exploding-platform trap chain), w2-7 Voltgrid Gauntlet (laser+reverse+switch finale).
