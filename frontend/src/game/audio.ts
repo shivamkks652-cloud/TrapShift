@@ -11,10 +11,10 @@ function getCtx(): AudioContext {
   if (!ctx) {
     ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     musicGain = ctx.createGain();
-    musicGain.gain.value = 0.22;
+    musicGain.gain.value = 0.34;
     musicGain.connect(ctx.destination);
     sfxGain = ctx.createGain();
-    sfxGain.gain.value = 0.5;
+    sfxGain.gain.value = 0.9;
     sfxGain.connect(ctx.destination);
   }
   return ctx;
@@ -27,8 +27,8 @@ export function resumeAudio() {
 
 export function setMuted(v: boolean) {
   muted = v;
-  if (musicGain) musicGain.gain.value = v ? 0 : 0.22;
-  if (sfxGain) sfxGain.gain.value = v ? 0 : 0.5;
+  if (musicGain) musicGain.gain.value = v ? 0 : 0.34;
+  if (sfxGain) sfxGain.gain.value = v ? 0 : 0.9;
 }
 
 export function isMuted() {
@@ -279,7 +279,7 @@ export function startMusic(world: number) {
   const bass = c.createOscillator();
   bass.type = timbre.bassType;
   const bassGain = c.createGain();
-  bassGain.gain.value = 0.12;
+  bassGain.gain.value = 0.17;
   bass.connect(bassGain);
   bassGain.connect(musicGain!);
   bass.frequency.value = scale[0] / 2;
@@ -300,7 +300,7 @@ export function startMusic(world: number) {
       osc.frequency.value = note;
       const g = c2.createGain();
       g.gain.setValueAtTime(0, c2.currentTime);
-      g.gain.linearRampToValueAtTime(0.08, c2.currentTime + 0.01);
+      g.gain.linearRampToValueAtTime(0.12, c2.currentTime + 0.01);
       g.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + stepDur * 0.9);
       osc.connect(g);
       g.connect(musicGain!);

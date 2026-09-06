@@ -53,6 +53,12 @@ Existing Death/Respawn/Checkpoint/Finish/Save systems were reused unchanged:
 - Headless engine tests: 22/22 (all 6 acceptance cases + grace + swept-collision + all-42-level regression).
 - testing_agent iteration_1: 6/6 automatable UI tests PASS (fall→respawn, repeated falls no soft-lock, R respawn, checkpoint pulse+toast+respawn-at-checkpoint). TEST 5 finish-flag not automatable (skill-gated) — covered by unit tests. No bugs/regressions/console errors.
 
+## Safe-Start Runway + Duration Ramp + Louder Audio (2026-06) — DONE
+User bugs: obstacles appearing at the spawn point; wanted longer levels with progress and stronger sound.
+- `levels/index.ts` now wraps every level through `withRunway(level, pad)` where `pad = 4 + (world-1)` (W1=4 … W7=10 tiles). It prepends an obstacle-free SOLID ground runway on the left and shifts ALL x-coords (playerStart, exit, checkpoints, shards, every hazard/zone incl. darkZone bridgeTiles, firewall startX/endX, rotating cx). Guarantees a safe spawn on solid ground with no hazard/gap, and makes later worlds longer (more duration as you progress). parTime nudged by ~pad*0.4.
+- Audio strengthened in `audio.ts`: sfxGain 0.5→0.9, musicGain 0.22→0.34, bass 0.12→0.17, melody note 0.08→0.12 (mute path updated to match).
+Verified: typecheck clean, headless harness ALL 43 levels still solvable with the runway (w3-4 stochastic, passes 3/3), and in-game screenshot confirms a long safe runway before the first obstacle (w7-1 rift now well right of spawn).
+
 ## Branding + Play Store Asset Pack (2026-06) — DONE
 Neon identity (cyan #4bf3ff + magenta #ff3df0 on #020814). Generated + composited via PIL:
 - App icon (512 + 1024, opaque), adaptive icon foreground/background, splash 2732 — Capacitor sources in `/app/frontend/assets/` (generate natively with `npx @capacitor/assets generate --android`, needs Node>=22 locally; see assets/README.md).
