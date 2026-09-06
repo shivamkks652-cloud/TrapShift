@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/"
+title = "TrapShift"
+version = "1.0.0"
+id = "artifacts/trapshift"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 23418
+
+[services.development]
+run = "pnpm --filter @workspace/trapshift run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/trapshift", "run", "build" ]
+publicDir = "artifacts/trapshift/dist/public"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "23418"
+BASE_PATH = "/"
