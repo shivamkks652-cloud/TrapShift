@@ -151,3 +151,13 @@ User feedback: "Beep sound abhi bhi aa raha hai level 2 se, har level par alag s
 - World mood still controls tempo/filter (e.g., World 5 dark slow, World 6 digital bright), level flavor controls instrument mix/pattern.
 - GameScreen passes level number as variant; Endless=0, Daily=3.
 Verified: tsc clean, 49 mock configs run clean, headless bot 43/43 PASS.
+
+## Music Redesign v3: Pure Ambient (2026-09-10) — DONE
+User feedback: "Beep sound nhi fix ho rha, bilkul nahi chahiye."
+- Root cause: previous versions still had repeating melody notes (plucks) that sounded like beeps.
+- audio.ts: COMPLETE rewrite to pure ambient system — NO repeating melody, NO step-based pattern.
+- Now: slow evolving pad chords (3-6s interval), continuous deep bass drone or slow pulse, very rare soft chime (10-20% chance per chord).
+- 6 AMBIENT_FLAVORS (calm, dream, deep, glow, mist, pulse) with different instruments/gains/tempo per level.
+- World mood controls chord interval, filter cutoff, root offset.
+- GameScreen/EndlessScreen still pass variant; each level gets different flavor + chord rotation.
+Verified: tsc clean, 49 mock configs run clean, 43/43 levels solver PASS.
