@@ -12,6 +12,10 @@ export interface GameSettings {
   reducedShake: boolean;
   colorblindMode: boolean;
   touchSensitivity: number; // 0.6 - 1.6, multiplier on control responsiveness
+  musicVolume: number; // 0 - 1
+  sfxVolume: number; // 0 - 1
+  touchScale: number; // 0.8 - 1.4, on-screen button size
+  touchOpacity: number; // 0.3 - 1, on-screen button opacity
 }
 
 export interface SaveData {
@@ -32,6 +36,10 @@ function defaultSettings(): GameSettings {
     reducedShake: false,
     colorblindMode: false,
     touchSensitivity: 1,
+    musicVolume: 0.8,
+    sfxVolume: 1,
+    touchScale: 1,
+    touchOpacity: 0.85,
   };
 }
 
@@ -159,7 +167,7 @@ export function unlockSkin(id: string, cost: number): boolean {
 }
 
 export function getSettings(): GameSettings {
-  return loadSave().settings;
+  return { ...defaultSettings(), ...loadSave().settings };
 }
 
 export function updateSettings(partial: Partial<GameSettings>) {

@@ -418,3 +418,19 @@
     inset: -1px;
   }
 }
+
+/* Level-complete confetti burst */
+@keyframes ts-confetti {
+  0% { transform: translateY(-30px) rotate(0deg); opacity: 1; }
+  100% { transform: translateY(360px) rotate(600deg); opacity: 0; }
+}
+.ts-confetti-piece {
+  position: absolute;
+  top: -10px;
+  width: 8px;
+  height: 13px;
+  border-radius: 2px;
+  animation-name: ts-confetti;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}

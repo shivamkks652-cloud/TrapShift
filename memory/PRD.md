@@ -53,6 +53,13 @@ Existing Death/Respawn/Checkpoint/Finish/Save systems were reused unchanged:
 - Headless engine tests: 22/22 (all 6 acceptance cases + grace + swept-collision + all-42-level regression).
 - testing_agent iteration_1: 6/6 automatable UI tests PASS (fall→respawn, repeated falls no soft-lock, R respawn, checkpoint pulse+toast+respawn-at-checkpoint). TEST 5 finish-flag not automatable (skill-gated) — covered by unit tests. No bugs/regressions/console errors.
 
+## Launch Polish: Win Juice + Audio/Touch Settings (2026-06) — DONE
+- Level Complete overlay upgraded (`ResultsOverlay.tsx`): 3-star zoom-in, confetti burst (CSS `ts-confetti`), SPEED RUN medal (time<=parTime) + PERFECT badge (3 stars), win fanfare on mount. testids: results-overlay, result-star-1/2/3, result-medals.
+- Settings (`SettingsScreen.tsx`): separate MUSIC + SFX volume sliders, TOUCH SIZE + OPACITY sliders, plus existing sensitivity + toggles; all persisted (storage GameSettings: musicVolume/sfxVolume/touchScale/touchOpacity, getSettings merges defaults). testids: music-volume-slider, sfx-volume-slider, touch-scale-slider, touch-opacity-slider, sensitivity-slider, settings-back-btn.
+- Audio (`audio.ts`): setMusicVolume/setSfxVolume applied over BASE_MUSIC 0.34 / BASE_SFX 0.9; GameScreen applies stored volumes on mount. Touch controls (`GameCanvas.tsx`) scale+opacity from settings.
+Verified: typecheck clean, headless harness 43/43, testing_agent iteration_6 = ZERO console errors, 5 sliders persist, touch controls reflect settings live, all 7 worlds smoke-pass + Endless loads; win-juice UI visually confirmed by main agent (stars+SPEED RUN+PERFECT+confetti on w1-1).
+Known minor (not a bug): stored music/sfx volume is applied on GameScreen mount; MainMenu/Endless music uses defaults until a story level is entered — could be lifted to app root later.
+
 ## Safe-Start Runway + Duration Ramp + Louder Audio (2026-06) — DONE
 User bugs: obstacles appearing at the spawn point; wanted longer levels with progress and stronger sound.
 - `levels/index.ts` now wraps every level through `withRunway(level, pad)` where `pad = 4 + (world-1)` (W1=4 … W7=10 tiles). It prepends an obstacle-free SOLID ground runway on the left and shifts ALL x-coords (playerStart, exit, checkpoints, shards, every hazard/zone incl. darkZone bridgeTiles, firewall startX/endX, rotating cx). Guarantees a safe spawn on solid ground with no hazard/gap, and makes later worlds longer (more duration as you progress). parTime nudged by ~pad*0.4.

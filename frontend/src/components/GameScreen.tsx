@@ -6,7 +6,8 @@ import ResultsOverlay from "./ResultsOverlay";
 import LevelIntro from "./LevelIntro";
 import type { LevelDef } from "@/game/types";
 import { getNextLevelId, getLevelById } from "@/game/levels";
-import { isMuted, setMuted, startMusic, stopMusic } from "@/game/audio";
+import { getSettings } from "@/game/storage";
+import { isMuted, setMuted, startMusic, stopMusic, setMusicVolume, setSfxVolume } from "@/game/audio";
 import { maybeShowInterstitialAfterLevelComplete } from "@/game/ads";
 
 interface Props {
@@ -33,6 +34,9 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
   }
 
   useEffect(() => {
+    const s = getSettings();
+    setMusicVolume(s.musicVolume);
+    setSfxVolume(s.sfxVolume);
     startMusic(level.world);
     return () => {
       stopMusic();
@@ -123,6 +127,7 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
           timeMs={result.timeMs}
           shardsCollected={result.shardsCollected}
           shardsTotal={result.shardsTotal}
+          parTime={level.parTime}
           hasNext={!!nextLevel}
           onNext={() => {
             if (nextLevel) {

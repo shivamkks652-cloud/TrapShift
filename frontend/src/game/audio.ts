@@ -6,15 +6,19 @@ let musicGain: GainNode | null = null;
 let sfxGain: GainNode | null = null;
 let currentMusicNodes: { stop: () => void } | null = null;
 let muted = false;
+const BASE_MUSIC = 0.34;
+const BASE_SFX = 0.9;
+let musicVol = 0.8;
+let sfxVol = 1.0;
 
 function getCtx(): AudioContext {
   if (!ctx) {
     ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     musicGain = ctx.createGain();
-    musicGain.gain.value = 0.34;
+    musicGain.gain.value = BASE_MUSIC * musicVol;
     musicGain.connect(ctx.destination);
     sfxGain = ctx.createGain();
-    sfxGain.gain.value = 0.9;
+    sfxGain.gain.value = BASE_SFX * sfxVol;
     sfxGain.connect(ctx.destination);
   }
   return ctx;
@@ -27,8 +31,18 @@ export function resumeAudio() {
 
 export function setMuted(v: boolean) {
   muted = v;
-  if (musicGain) musicGain.gain.value = v ? 0 : 0.34;
-  if (sfxGain) sfxGain.gain.value = v ? 0 : 0.9;
+  if (musicGain) musicGain.gain.value = v ? 0 : BASE_MUSIC * musicVol;
+  if (sfxGain) sfxGain.gain.value = v ? 0 : BASE_SFX * sfxVol;
+}
+
+export function setMusicVolume(v: number) {
+  musicVol = Math.max(0, Math.min(1, v));
+  if (musicGain && !muted) musicGain.gain.value = BASE_MUSIC * musicVol;
+}
+
+export function setSfxVolume(v: number) {
+  sfxVol = Math.max(0, Math.min(1, v));
+  if (sfxGain && !muted) sfxGain.gain.value = BASE_SFX * sfxVol;
 }
 
 export function isMuted() {

@@ -190,8 +190,14 @@ export default function GameCanvas({
   return (
     <div className="relative w-full h-full select-none touch-none">
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-      <div className="absolute inset-x-0 bottom-0 flex items-end justify-between px-5 pb-6 pointer-events-none">
-        <div className="flex gap-3 pointer-events-auto">
+      <div
+        className="absolute inset-x-0 bottom-0 flex items-end justify-between px-5 pb-6 pointer-events-none"
+        style={{ opacity: getSettings().touchOpacity }}
+      >
+        <div
+          className="flex gap-3 pointer-events-auto"
+          style={{ transform: `scale(${getSettings().touchScale})`, transformOrigin: "bottom left" }}
+        >
           <TouchButton
             label="◀"
             onDown={() => setTouch("left", true)}
@@ -203,7 +209,10 @@ export default function GameCanvas({
             onUp={() => setTouch("right", false)}
           />
         </div>
-        <div className="pointer-events-auto">
+        <div
+          className="pointer-events-auto"
+          style={{ transform: `scale(${getSettings().touchScale})`, transformOrigin: "bottom right" }}
+        >
           <TouchButton label="⤒" big onDown={pressJump} onUp={releaseJump} />
         </div>
       </div>
