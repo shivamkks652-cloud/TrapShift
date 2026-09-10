@@ -37,7 +37,7 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
     const s = getSettings();
     setMusicVolume(s.musicVolume);
     setSfxVolume(s.sfxVolume);
-    startMusic(level.world);
+    startMusic(level.world, Number(level.id.split("-")[1]) || 0);
     return () => {
       stopMusic();
       if (toastTimer.current) window.clearTimeout(toastTimer.current);

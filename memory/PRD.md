@@ -127,3 +127,11 @@ User reported (Hinglish): ek beep sound lagatar bajta hai (app minimize ke baad 
 - audio.ts: `initAudioLifecycle()` added — document.hidden / window blur par ctx.suspend(), wapas aane par (visible/focus + not muted) ctx.resume(). App.tsx root useEffect se call hota hai.
 - Volume boost: BASE_MUSIC 0.34→0.52, BASE_SFX 0.9→1.0, music bass gain 0.17→0.22, melody peak 0.12→0.16, melody attack 0.01→0.02 (beep thoda softer).
 Verified: tsc clean, level entry + canvas render OK, zero console errors. Minimize behavior real device par verify karna hai (code standard Web Audio lifecycle use karta hai).
+
+## Music Redesign + Per-Level Sound + Strong Haptics (2026-09-10) — DONE
+User asked (Hinglish): beep sound change karo, har level ka game sound alag ho, haptics strong karo. Plan confirmed via ask_human (Soft Synthwave, per-level flavor, navigator.vibrate boost).
+- audio.ts: music engine REWRITTEN — old beep arpeggio replaced with synthwave layers: warm pad chords (slow swell, chord progression i-VI-III-VII rotated per level), deep bass pulse per bar, soft lowpass-filtered pluck melody, high-passed noise hat on off-beats. WORLD_MOOD per world (filter/pad/pluck/tempo), W7 keeps glitch-skip + wider detune.
+- Per-level variation: startMusic(world, variant) — GameScreen passes level number from id (w3-2 -> variant 2); tempo 0.86-1.14x, melody octave, 6 melody contours, chord rotation => 43 unique feels. Endless=variant 0, Daily=variant 3.
+- haptics.ts: central 2.6x boost (cap 260ms); strong single hits (>=30ms, deaths) become double-buzz [0, x, 60, 1.6x]. All 10 engine call sites automatically stronger.
+- USER ACTION NEEDED (local): AndroidManifest.xml mein `<uses-permission android:name="android.permission.VIBRATE" />` add karna hai, warna real device par vibration nahi chalega.
+Verified: tsc clean, mock-AudioContext run of all 7 worlds x 3 variants OK, headless bot 43/43 pass (2/3 runs clean; 1 flaky W7 random-rift bot run, no physics change), live level w1-1 runs with zero console errors.

@@ -30,9 +30,9 @@ export default function EndlessScreen({ mode, onExit }: Props) {
   }, [mode]);
 
   useEffect(() => {
-    startMusic(1);
+    startMusic(1, mode === "daily" ? 3 : 0);
     return () => stopMusic();
-  }, []);
+  }, [mode]);
 
   function handleGameOver(info: { distance: number; shards: number }) {
     const score = info.distance + info.shards * 5;
