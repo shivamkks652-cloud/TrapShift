@@ -4,10 +4,11 @@
 let ctx: AudioContext | null = null;
 let musicGain: GainNode | null = null;
 let sfxGain: GainNode | null = null;
+let masterComp: DynamicsCompressorNode | null = null;
 let currentMusicNodes: { stop: () => void } | null = null;
 let muted = false;
-const BASE_MUSIC = 0.52;
-const BASE_SFX = 1.0;
+const BASE_MUSIC = 0.45;
+const BASE_SFX = 0.85;
 let musicVol = 0.8;
 let sfxVol = 1.0;
 let lifecycleBound = false;
@@ -15,12 +16,20 @@ let lifecycleBound = false;
 function getCtx(): AudioContext {
   if (!ctx) {
     ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    // Master limiter prevents crack/clipping when music + SFX stack up.
+    masterComp = ctx.createDynamicsCompressor();
+    masterComp.threshold.value = -12;
+    masterComp.knee.value = 20;
+    masterComp.ratio.value = 12;
+    masterComp.attack.value = 0.003;
+    masterComp.release.value = 0.25;
+    masterComp.connect(ctx.destination);
     musicGain = ctx.createGain();
     musicGain.gain.value = BASE_MUSIC * musicVol;
-    musicGain.connect(ctx.destination);
+    musicGain.connect(masterComp);
     sfxGain = ctx.createGain();
     sfxGain.gain.value = BASE_SFX * sfxVol;
-    sfxGain.connect(ctx.destination);
+    sfxGain.connect(masterComp);
   }
   return ctx;
 }
@@ -262,12 +271,21 @@ function startHum(freq: number, gain: number, type: OscillatorType = "sawtooth")
 
 export function gateHumStart(id: string, electric: boolean) {
   if (muted || gateHums.has(id)) return;
-  gateHums.set(id, startHum(electric ? 3800 : 2600, 0.03, electric ? "square" : "sawtooth"));
+  // Low energy rumble instead of a high-pitched beep.
+  gateHums.set(id, startHum(electric ? 170 : 115, 0.055, electric ? "triangle" : "sine"));
 }
 
 export function gateHumStop(id: string) {
   gateHums.get(id)?.stop();
   gateHums.delete(id);
+}
+
+// Stops every looping hum — call on level exit so nothing keeps playing.
+export function stopAllHums() {
+  for (const h of gateHums.values()) h.stop();
+  gateHums.clear();
+  gravityHum?.stop();
+  gravityHum = null;
 }
 
 export function gravityHumStart() {
@@ -421,11 +439,11 @@ export function startMusic(world: number, variant = 0) {
     const o = c2.createOscillator();
     o.type = flavor.chimeType;
     const root = scale[(chordSeq[chordIdx] + mood.rootOffset) % scale.length];
-    o.frequency.value = root * (Math.random() < 0.5 ? 2 : 4);
+    o.frequency.value = root * 2;
     const g = c2.createGain();
     const dur = 1.5 + Math.random() * 1.5;
     g.gain.setValueAtTime(0, c2.currentTime);
-    g.gain.linearRampToValueAtTime(flavor.chimeGain, c2.currentTime + 0.05);
+    g.gain.linearRampToValueAtTime(flavor.chimeGain, c2.currentTime + 0.15);
     g.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + dur);
     o.connect(g);
     g.connect(musicGain!);

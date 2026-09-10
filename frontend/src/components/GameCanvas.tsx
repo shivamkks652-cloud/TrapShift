@@ -5,7 +5,7 @@ import { TILE, type LevelDef } from "@/game/types";
 import { getWorldOfLevel } from "@/game/levels";
 import { RESTART_DELAY_MS } from "@/game/constants";
 import { loadSave, recordLevelResult, getSettings } from "@/game/storage";
-import { resumeAudio } from "@/game/audio";
+import { resumeAudio, stopAllHums } from "@/game/audio";
 
 export interface GameCanvasHandle {
   restart: () => void;
@@ -171,6 +171,7 @@ export default function GameCanvas({
       window.removeEventListener("resize", resize);
       window.removeEventListener("keydown", keydown);
       window.removeEventListener("keyup", keyup);
+      stopAllHums();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [level.id, paused]);

@@ -161,3 +161,10 @@ User feedback: "Beep sound nhi fix ho rha, bilkul nahi chahiye."
 - World mood controls chord interval, filter cutoff, root offset.
 - GameScreen/EndlessScreen still pass variant; each level gets different flavor + chord rotation.
 Verified: tsc clean, 49 mock configs run clean, 43/43 levels solver PASS.
+
+## Beep + Crackling ROOT FIX (2026-09-10) — DONE
+User feedback: "Level 2 se beep chal raha hai + sound crack ho raha hai."
+- ROOT CAUSE 1 (beep): Laser/electric gate hums were 2600-3800Hz sawtooth/square (literal beep), started from w1-2 "Rhythm Gate" (first level with laser gates) — AND gateHumStop was never called on level exit, so hums played FOREVER across screens.
+- ROOT CAUSE 2 (crackling): musicGain (0.52) + sfxGain (1.0) both fed destination directly; stacked SFX+music clipped past 1.0.
+- Fixes in audio.ts: (a) gate hums now low energy rumble 115Hz sine / 170Hz triangle; (b) new stopAllHums() exported, called from GameCanvas unmount cleanup; (c) master DynamicsCompressor (-12dB threshold, 12:1) inserted before destination; BASE_MUSIC 0.45, BASE_SFX 0.85; (d) ambient chime capped at 2x octave with soft 0.15s attack.
+Verified: tsc clean, mock audio test (49 configs + hum lifecycle) clean, headless bot 43/43 PASS.
