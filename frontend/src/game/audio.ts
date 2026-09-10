@@ -6,10 +6,11 @@ let musicGain: GainNode | null = null;
 let sfxGain: GainNode | null = null;
 let currentMusicNodes: { stop: () => void } | null = null;
 let muted = false;
-const BASE_MUSIC = 0.34;
-const BASE_SFX = 0.9;
+const BASE_MUSIC = 0.52;
+const BASE_SFX = 1.0;
 let musicVol = 0.8;
 let sfxVol = 1.0;
+let lifecycleBound = false;
 
 function getCtx(): AudioContext {
   if (!ctx) {
@@ -27,6 +28,27 @@ function getCtx(): AudioContext {
 export function resumeAudio() {
   const c = getCtx();
   if (c.state === "suspended") c.resume();
+}
+
+// Pause all audio when the app is minimized/backgrounded, resume on return.
+export function initAudioLifecycle() {
+  if (lifecycleBound) return;
+  lifecycleBound = true;
+  const onVis = () => {
+    if (!ctx) return;
+    if (document.hidden) {
+      void ctx.suspend();
+    } else if (!muted) {
+      void ctx.resume();
+    }
+  };
+  document.addEventListener("visibilitychange", onVis);
+  window.addEventListener("blur", () => {
+    if (ctx) void ctx.suspend();
+  });
+  window.addEventListener("focus", () => {
+    if (ctx && !muted && !document.hidden) void ctx.resume();
+  });
 }
 
 export function setMuted(v: boolean) {
@@ -293,7 +315,7 @@ export function startMusic(world: number) {
   const bass = c.createOscillator();
   bass.type = timbre.bassType;
   const bassGain = c.createGain();
-  bassGain.gain.value = 0.17;
+  bassGain.gain.value = 0.22;
   bass.connect(bassGain);
   bassGain.connect(musicGain!);
   bass.frequency.value = scale[0] / 2;
@@ -314,7 +336,7 @@ export function startMusic(world: number) {
       osc.frequency.value = note;
       const g = c2.createGain();
       g.gain.setValueAtTime(0, c2.currentTime);
-      g.gain.linearRampToValueAtTime(0.12, c2.currentTime + 0.01);
+      g.gain.linearRampToValueAtTime(0.16, c2.currentTime + 0.02);
       g.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + stepDur * 0.9);
       osc.connect(g);
       g.connect(musicGain!);

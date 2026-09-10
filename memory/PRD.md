@@ -120,3 +120,10 @@ Verified: tsc clean, streak logic unit test 4/4 (fresh=1, same-day no-op, consec
 - P1: "New Best!" celebration in Endless mode (high-score badge + confetti).
 - P2: Skin unlock celebration juice; promo video storyboard; toast queue fix (GameScreen.tsx).
 - P2 (streak): optional daily-login shard rewards / 7-day milestone bonus (user deferred).
+
+## Audio Fixes: Background Beep + Weak Volume (2026-09-10) — DONE
+User reported (Hinglish): ek beep sound lagatar bajta hai (app minimize ke baad bhi), aur overall sound weak hai.
+- Root cause: AudioContext kabhi suspend nahi hota tha — music loop (setTimeout arpeggio) + gate/gravity hums background mein bajte rehte the. Koi visibilitychange handler nahi tha.
+- audio.ts: `initAudioLifecycle()` added — document.hidden / window blur par ctx.suspend(), wapas aane par (visible/focus + not muted) ctx.resume(). App.tsx root useEffect se call hota hai.
+- Volume boost: BASE_MUSIC 0.34→0.52, BASE_SFX 0.9→1.0, music bass gain 0.17→0.22, melody peak 0.12→0.16, melody attack 0.01→0.02 (beep thoda softer).
+Verified: tsc clean, level entry + canvas render OK, zero console errors. Minimize behavior real device par verify karna hai (code standard Web Audio lifecycle use karta hai).
