@@ -142,3 +142,12 @@ User asked: Kya AndroidManifest wala bhi automatic ho jayega?
 - Rewrote `src/game/haptics.ts` to use `@capacitor/haptics` (`ImpactStyle.Heavy` for deaths >=30ms, Medium for switches/bursts, Light for small impacts) with automatic fallback to `navigator.vibrate`.
 - Benefit: Capacitor automatically injects native Android haptics bindings & permissions during `npx cap sync` / Android Gradle build. Zero manual XML edits needed by the user.
 Verified: tsc clean, 43/43 levels auto-bot pass.
+
+## Music Redesign v2: No-Beep Per-Level Loops (2026-09-10) — DONE
+User feedback: "Beep sound abhi bhi aa raha hai level 2 se, har level par alag sound chahiye, beep nahi."
+- audio.ts: music engine rewritten with 6 LEVEL_FLAVORS (calm_pad, chime, bass_pulse, soft_rhythm, dreamy_arp, atmospheric).
+- Melody patterns are seeded-random (mulberry32) per world+level, so every level has a unique 8-note contour.
+- Instruments restricted to soft sine/triangle with lowpass filter, long attack/decay — no harsh square/sawtooth beeps.
+- World mood still controls tempo/filter (e.g., World 5 dark slow, World 6 digital bright), level flavor controls instrument mix/pattern.
+- GameScreen passes level number as variant; Endless=0, Daily=3.
+Verified: tsc clean, 49 mock configs run clean, headless bot 43/43 PASS.

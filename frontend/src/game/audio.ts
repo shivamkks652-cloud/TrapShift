@@ -292,28 +292,72 @@ const SCALES: Record<number, number[]> = {
   7: [207.7, 246.9, 261.6, 311.1, 370, 415.3], // Chaos Rift — unstable, glitchy intervals
 };
 
-// Per-world synthwave mood: warm pad chords + soft filtered plucks + deep bass.
-const WORLD_MOOD: Record<number, { padType: OscillatorType; pluckType: OscillatorType; bassType: OscillatorType; stepDur: number; filterHz: number; padGain: number }> = {
-  1: { padType: "sine", pluckType: "triangle", bassType: "sine", stepDur: 0.3, filterHz: 1600, padGain: 0.05 },
-  2: { padType: "sine", pluckType: "triangle", bassType: "triangle", stepDur: 0.26, filterHz: 2200, padGain: 0.05 },
-  3: { padType: "sine", pluckType: "sine", bassType: "sine", stepDur: 0.34, filterHz: 1100, padGain: 0.055 },
-  4: { padType: "triangle", pluckType: "triangle", bassType: "sine", stepDur: 0.24, filterHz: 1800, padGain: 0.05 },
-  5: { padType: "triangle", pluckType: "sine", bassType: "sine", stepDur: 0.36, filterHz: 900, padGain: 0.06 },
-  6: { padType: "sine", pluckType: "square", bassType: "triangle", stepDur: 0.2, filterHz: 2400, padGain: 0.045 },
-  7: { padType: "triangle", pluckType: "triangle", bassType: "sine", stepDur: 0.26, filterHz: 1400, padGain: 0.05 },
+// Per-world base mood (tempo/filter) + per-level flavor (instrument mix).
+const WORLD_MOOD: Record<number, { stepDur: number; filterHz: number }> = {
+  1: { stepDur: 0.32, filterHz: 1600 },
+  2: { stepDur: 0.28, filterHz: 2000 },
+  3: { stepDur: 0.36, filterHz: 1200 },
+  4: { stepDur: 0.26, filterHz: 1800 },
+  5: { stepDur: 0.38, filterHz: 900 },
+  6: { stepDur: 0.22, filterHz: 2400 },
+  7: { stepDur: 0.28, filterHz: 1400 },
 };
 
-// Melody contour per level variant — same world mood, different feel per level.
-const MELODY_PATTERNS = [
-  [0, 1, 2, 3, 4, 5],
-  [5, 4, 3, 2, 1, 0],
-  [0, 2, 4, 5, 4, 2],
-  [0, 3, 1, 4, 2, 5],
-  [2, 0, 3, 5, 3, 1],
-  [4, 2, 5, 3, 1, 0],
+interface LevelFlavor {
+  name: string;
+  tempoMul: number;
+  padType: OscillatorType;
+  pluckType: OscillatorType;
+  bassType: OscillatorType;
+  padGain: number;
+  pluckGain: number;
+  bassGain: number;
+  pluckDurMul: number;
+  hats: boolean;
+  arp: "walk" | "arp" | "sparse" | "pulse";
+  octave: number;
+}
+
+const LEVEL_FLAVORS: LevelFlavor[] = [
+  { name: "calm_pad", tempoMul: 1.0, padType: "sine", pluckType: "sine", bassType: "sine", padGain: 0.07, pluckGain: 0.08, bassGain: 0.18, pluckDurMul: 4.0, hats: false, arp: "walk", octave: 1 },
+  { name: "chime", tempoMul: 0.9, padType: "sine", pluckType: "triangle", bassType: "sine", padGain: 0.05, pluckGain: 0.1, bassGain: 0.16, pluckDurMul: 3.0, hats: false, arp: "arp", octave: 2 },
+  { name: "bass_pulse", tempoMul: 1.1, padType: "triangle", pluckType: "sine", bassType: "sine", padGain: 0.04, pluckGain: 0.06, bassGain: 0.26, pluckDurMul: 2.5, hats: true, arp: "pulse", octave: 1 },
+  { name: "soft_rhythm", tempoMul: 1.0, padType: "sine", pluckType: "triangle", bassType: "sine", padGain: 0.05, pluckGain: 0.09, bassGain: 0.18, pluckDurMul: 3.0, hats: true, arp: "walk", octave: 1 },
+  { name: "dreamy_arp", tempoMul: 0.85, padType: "sine", pluckType: "sine", bassType: "sine", padGain: 0.06, pluckGain: 0.1, bassGain: 0.16, pluckDurMul: 3.5, hats: false, arp: "arp", octave: 1 },
+  { name: "atmospheric", tempoMul: 1.2, padType: "triangle", pluckType: "sine", bassType: "sine", padGain: 0.08, pluckGain: 0.05, bassGain: 0.15, pluckDurMul: 5.0, hats: false, arp: "sparse", octave: 1 },
 ];
 
 const CHORD_ROOTS = [0, 3, 4, 2];
+
+function mulberry32(seed: number) {
+  return function () {
+    let t = (seed += 0x6d2b79f5);
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+function generatePattern(rng: () => number, arp: LevelFlavor["arp"], scaleLen: number): number[] {
+  const pattern: number[] = [];
+  const len = 8;
+  for (let i = 0; i < len; i++) {
+    if (arp === "sparse" && rng() < 0.45) {
+      pattern.push(-1);
+      continue;
+    }
+    let degree: number;
+    if (arp === "arp") {
+      degree = (i * 2) % scaleLen;
+    } else if (arp === "pulse") {
+      degree = i % 2 === 0 ? 0 : Math.floor(rng() * scaleLen);
+    } else {
+      degree = Math.floor(rng() * scaleLen);
+    }
+    pattern.push(degree);
+  }
+  return pattern;
+}
 
 export function startMusic(world: number, variant = 0) {
   stopMusic();
@@ -321,21 +365,20 @@ export function startMusic(world: number, variant = 0) {
   const c = getCtx();
   const scale = SCALES[world] ?? SCALES[1];
   const mood = WORLD_MOOD[world] ?? WORLD_MOOD[1];
-  const v = Math.abs(Math.floor(variant));
+  const flavor = LEVEL_FLAVORS[variant % LEVEL_FLAVORS.length];
+  const seed = world * 1000 + variant;
+  const rng = mulberry32(seed);
+  const pattern = generatePattern(rng, flavor.arp, scale.length);
+  const chordSeq = CHORD_ROOTS.map((_, i) => CHORD_ROOTS[(i + world + variant) % CHORD_ROOTS.length]);
   let stopped = false;
   let stepIndex = 0;
-
-  // Per-level variation: tempo, octave, melody contour, chord rotation.
-  const stepDur = mood.stepDur * (0.86 + (v % 5) * 0.07);
-  const melodyMul = v % 3 === 1 ? 2 : 1;
-  const pattern = MELODY_PATTERNS[v % MELODY_PATTERNS.length];
-  const chordSeq = CHORD_ROOTS.map((_, i) => CHORD_ROOTS[(i + v) % CHORD_ROOTS.length]);
+  const stepDur = mood.stepDur * flavor.tempoMul;
 
   function playPad(degree: number) {
     const c2 = getCtx();
     const g = c2.createGain();
     g.gain.setValueAtTime(0, c2.currentTime);
-    g.gain.linearRampToValueAtTime(mood.padGain, c2.currentTime + 1.1);
+    g.gain.linearRampToValueAtTime(flavor.padGain, c2.currentTime + 1.4);
     const f = c2.createBiquadFilter();
     f.type = "lowpass";
     f.frequency.value = mood.filterHz;
@@ -343,9 +386,9 @@ export function startMusic(world: number, variant = 0) {
     f.connect(musicGain!);
     const oscs = [0, 2, 4].map((k, i) => {
       const o = c2.createOscillator();
-      o.type = mood.padType;
+      o.type = flavor.padType;
       o.frequency.value = scale[(degree + k) % scale.length];
-      o.detune.value = (i - 1) * (world === 7 ? 14 : 6);
+      o.detune.value = (i - 1) * (world === 7 ? 14 : 5);
       o.connect(g);
       o.start();
       return o;
@@ -354,20 +397,20 @@ export function startMusic(world: number, variant = 0) {
       const t = getCtx().currentTime;
       g.gain.cancelScheduledValues(t);
       g.gain.setValueAtTime(g.gain.value, t);
-      g.gain.linearRampToValueAtTime(0, t + 0.9);
-      window.setTimeout(() => oscs.forEach((o) => { try { o.stop(); } catch { /* already stopped */ } }), 1100);
+      g.gain.linearRampToValueAtTime(0, t + 1.0);
+      window.setTimeout(() => oscs.forEach((o) => { try { o.stop(); } catch { /* already stopped */ } }), 1200);
     };
   }
 
   function playBass(freq: number) {
     const c2 = getCtx();
     const o = c2.createOscillator();
-    o.type = mood.bassType;
+    o.type = flavor.bassType;
     o.frequency.value = freq / 2;
     const g = c2.createGain();
-    const dur = Math.min(stepDur * 8, 2.4);
+    const dur = Math.min(stepDur * 8, 2.8);
     g.gain.setValueAtTime(0, c2.currentTime);
-    g.gain.linearRampToValueAtTime(0.22, c2.currentTime + 0.05);
+    g.gain.linearRampToValueAtTime(flavor.bassGain, c2.currentTime + 0.08);
     g.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + dur);
     o.connect(g);
     g.connect(musicGain!);
@@ -378,15 +421,15 @@ export function startMusic(world: number, variant = 0) {
   function playPluck(freq: number) {
     const c2 = getCtx();
     const o = c2.createOscillator();
-    o.type = mood.pluckType;
-    o.frequency.value = freq;
+    o.type = flavor.pluckType;
+    o.frequency.value = freq * flavor.octave;
     const f = c2.createBiquadFilter();
     f.type = "lowpass";
     f.frequency.value = mood.filterHz;
     const g = c2.createGain();
-    const dur = stepDur * 2.4;
+    const dur = stepDur * flavor.pluckDurMul;
     g.gain.setValueAtTime(0, c2.currentTime);
-    g.gain.linearRampToValueAtTime(0.14, c2.currentTime + 0.02);
+    g.gain.linearRampToValueAtTime(flavor.pluckGain, c2.currentTime + 0.03);
     g.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + dur);
     o.connect(f);
     f.connect(g);
@@ -397,7 +440,7 @@ export function startMusic(world: number, variant = 0) {
 
   function playHat() {
     const c2 = getCtx();
-    const dur = 0.03;
+    const dur = 0.025;
     const buf = c2.createBuffer(1, Math.ceil(c2.sampleRate * dur), c2.sampleRate);
     const d = buf.getChannelData(0);
     for (let i = 0; i < d.length; i++) d[i] = Math.random() * 2 - 1;
@@ -405,9 +448,9 @@ export function startMusic(world: number, variant = 0) {
     src.buffer = buf;
     const f = c2.createBiquadFilter();
     f.type = "highpass";
-    f.frequency.value = 7000;
+    f.frequency.value = 8000;
     const g = c2.createGain();
-    g.gain.setValueAtTime(0.05, c2.currentTime);
+    g.gain.setValueAtTime(0.028, c2.currentTime);
     g.gain.exponentialRampToValueAtTime(0.001, c2.currentTime + dur);
     src.connect(f);
     f.connect(g);
@@ -427,12 +470,11 @@ export function startMusic(world: number, variant = 0) {
       releasePad = playPad(chordSeq[chordIdx]);
       playBass(scale[chordSeq[chordIdx] % scale.length]);
     }
-    // World 7 (Chaos Rift) occasionally jitters a step for an unstable feel.
-    const glitchSkip = world === 7 && Math.random() < 0.12;
-    if (!glitchSkip && (stepIndex + v) % 8 !== 7) {
-      playPluck(scale[pattern[stepIndex % pattern.length] % scale.length] * melodyMul);
+    const note = pattern[stepIndex % pattern.length];
+    if (note >= 0) {
+      playPluck(scale[note % scale.length]);
     }
-    if (stepIndex % 2 === 1) playHat();
+    if (flavor.hats && stepIndex % 2 === 1) playHat();
     stepIndex++;
     timer = window.setTimeout(step, stepDur * 1000);
   }
