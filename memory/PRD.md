@@ -135,3 +135,10 @@ User asked (Hinglish): beep sound change karo, har level ka game sound alag ho, 
 - haptics.ts: central 2.6x boost (cap 260ms); strong single hits (>=30ms, deaths) become double-buzz [0, x, 60, 1.6x]. All 10 engine call sites automatically stronger.
 - USER ACTION NEEDED (local): AndroidManifest.xml mein `<uses-permission android:name="android.permission.VIBRATE" />` add karna hai, warna real device par vibration nahi chalega.
 Verified: tsc clean, mock-AudioContext run of all 7 worlds x 3 variants OK, headless bot 43/43 pass (2/3 runs clean; 1 flaky W7 random-rift bot run, no physics change), live level w1-1 runs with zero console errors.
+
+## Automatic Capacitor Haptics Plugin (2026-09-10) — DONE
+User asked: Kya AndroidManifest wala bhi automatic ho jayega?
+- Installed `@capacitor/haptics` plugin (v8.0.2).
+- Rewrote `src/game/haptics.ts` to use `@capacitor/haptics` (`ImpactStyle.Heavy` for deaths >=30ms, Medium for switches/bursts, Light for small impacts) with automatic fallback to `navigator.vibrate`.
+- Benefit: Capacitor automatically injects native Android haptics bindings & permissions during `npx cap sync` / Android Gradle build. Zero manual XML edits needed by the user.
+Verified: tsc clean, 43/43 levels auto-bot pass.
