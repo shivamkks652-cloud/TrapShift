@@ -108,3 +108,15 @@ Verified: headless controller proved all 7 physically solvable; death/respawn on
 NEW switch->gate mechanic (types Switch/Gate; engine switchState/checkSwitches/isGateOpen + gates in collectSolids; render drawGate/drawSwitch; GameScreen 'Gate opened!' toast, data-testid=gate-toast). World 1 = 6 distinct brain-puzzles:
 - w1-1 First Steps (LEARN run+jump) | w1-2 Rhythm Gate (TIMING, 2 offset laser gates) | w1-3 Watch Your Step (FAKE tiles/observe) | w1-4 Two Roads (CHOICE stones vs bold shard) | w1-5 Blind Bridge (MEMORY hidden dark-zone bridge) | w1-6 The Lever (SWITCH opens energy gate).
 Verified: headless informed-bot proved all 6 physically solvable (0 deaths); death/respawn + checkpoint + switch->gate(persist) + exit/progression = 21/21. testing_agent iteration_2: death/respawn, checkpoint-respawn, switch->gate all PASS live, no console errors. Level-select cards now have data-testid=level-card-<id>.
+
+## Daily Streak + Audio Boot Fix (2026-09-10) — DONE
+User asked (Hinglish): "Daily streak" feature for retention; plan confirmed via ask_human (flame counter, standard reset rule, no shard rewards for now, plus audio fix in same round).
+- storage.ts: new `DailyStreak { count, lastLoginDate }` in SaveData (old saves auto-migrate via default merge) + `recordDailyLogin()` — same day = no-op, yesterday = +1, gap = reset to 1 (local date based).
+- MainMenu.tsx: flame (Lucide) + streak count pill with orange neon glow in bottom bar (`data-testid="daily-streak-counter"`); also added data-testids to Play/Endless/Daily/Skins/Settings/Mute buttons (P2 backlog item done).
+- App.tsx: audio boot fix — `setMusicVolume`/`setSfxVolume` from saved settings now applied at app root on mount, so MainMenu/endless music respects user volume before entering any story level.
+Verified: tsc clean, streak logic unit test 4/4 (fresh=1, same-day no-op, consecutive +1, gap reset), screenshots (mobile 390 + desktop 1920) show flame counter rendering. Headless 43-level bot unaffected (no level/physics changes).
+
+## Backlog / Next
+- P1: "New Best!" celebration in Endless mode (high-score badge + confetti).
+- P2: Skin unlock celebration juice; promo video storyboard; toast queue fix (GameScreen.tsx).
+- P2 (streak): optional daily-login shard rewards / 7-day milestone bonus (user deferred).

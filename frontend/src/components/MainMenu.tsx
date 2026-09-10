@@ -1,5 +1,5 @@
-import { Play, Infinity as InfinityIcon, CalendarDays, Shirt, Volume2, VolumeX, Zap, Settings } from "lucide-react";
-import { loadSave } from "@/game/storage";
+import { Play, Infinity as InfinityIcon, CalendarDays, Shirt, Volume2, VolumeX, Zap, Settings, Flame } from "lucide-react";
+import { loadSave, recordDailyLogin } from "@/game/storage";
 import { useEffect, useState } from "react";
 import logoEmblem from "@/assets/logo-emblem.png";
 
@@ -15,9 +15,11 @@ interface Props {
 
 export default function MainMenu({ onPlay, onEndless, onDaily, onSkins, onSettings, muted, onToggleMute }: Props) {
   const [shards, setShards] = useState(0);
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
     setShards(loadSave().totalShards);
+    setStreak(recordDailyLogin().count);
   }, []);
 
   return (
@@ -40,6 +42,7 @@ export default function MainMenu({ onPlay, onEndless, onDaily, onSkins, onSettin
 
       <div className="relative w-full max-w-xs flex flex-col gap-3">
         <button
+          data-testid="play-story-button"
           onClick={onPlay}
           className="group relative flex items-center justify-center gap-3 rounded-2xl py-4 bg-cyan-400 text-[#0b0a1f] font-bold text-lg shadow-[0_0_30px_rgba(75,243,255,0.5)] active:scale-95 transition-transform"
         >
@@ -47,6 +50,7 @@ export default function MainMenu({ onPlay, onEndless, onDaily, onSkins, onSettin
         </button>
         <div className="grid grid-cols-2 gap-3">
           <button
+            data-testid="endless-mode-button"
             onClick={onEndless}
             className="flex flex-col items-center justify-center gap-1 rounded-2xl py-4 bg-white/10 border border-white/10 text-white active:scale-95 transition-transform"
           >
@@ -54,6 +58,7 @@ export default function MainMenu({ onPlay, onEndless, onDaily, onSkins, onSettin
             <span className="text-sm font-medium">Endless</span>
           </button>
           <button
+            data-testid="daily-mode-button"
             onClick={onDaily}
             className="flex flex-col items-center justify-center gap-1 rounded-2xl py-4 bg-white/10 border border-white/10 text-white active:scale-95 transition-transform"
           >
@@ -62,6 +67,7 @@ export default function MainMenu({ onPlay, onEndless, onDaily, onSkins, onSettin
           </button>
         </div>
         <button
+          data-testid="skins-button"
           onClick={onSkins}
           className="flex items-center justify-center gap-2 rounded-2xl py-3 bg-white/5 border border-white/10 text-white/80 active:scale-95 transition-transform"
         >
@@ -70,17 +76,27 @@ export default function MainMenu({ onPlay, onEndless, onDaily, onSkins, onSettin
       </div>
 
       <div className="relative flex items-center gap-4">
-        <div className="flex items-center gap-1.5 text-amber-300 bg-white/5 rounded-full px-3 py-1.5 border border-white/10">
+        <div
+          data-testid="daily-streak-counter"
+          title="Daily streak"
+          className="flex items-center gap-1.5 text-orange-300 bg-white/5 rounded-full px-3 py-1.5 border border-orange-400/30 shadow-[0_0_14px_rgba(251,146,60,0.35)]"
+        >
+          <Flame size={14} className="fill-orange-400 text-orange-400 animate-pulse" style={{ animationDuration: "1.4s" }} />
+          <span className="text-sm font-mono">{streak}</span>
+        </div>
+        <div data-testid="shards-counter" className="flex items-center gap-1.5 text-amber-300 bg-white/5 rounded-full px-3 py-1.5 border border-white/10">
           <Zap size={14} className="fill-amber-300" />
           <span className="text-sm font-mono">{shards}</span>
         </div>
         <button
+          data-testid="mute-toggle-button"
           onClick={onToggleMute}
           className="w-9 h-9 rounded-full bg-white/5 border border-white/10 text-white/70 flex items-center justify-center active:scale-90 transition-transform"
         >
           {muted ? <VolumeX size={16} /> : <Volume2 size={16} />}
         </button>
         <button
+          data-testid="settings-button"
           onClick={onSettings}
           className="w-9 h-9 rounded-full bg-white/5 border border-white/10 text-white/70 flex items-center justify-center active:scale-90 transition-transform"
         >

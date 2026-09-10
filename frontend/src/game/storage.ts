@@ -18,6 +18,11 @@ export interface GameSettings {
   touchOpacity: number; // 0.3 - 1, on-screen button opacity
 }
 
+export interface DailyStreak {
+  count: number;
+  lastLoginDate: string; // local YYYY-M-D
+}
+
 export interface SaveData {
   version: number;
   levelProgress: Record<string, LevelProgress>;
@@ -26,6 +31,7 @@ export interface SaveData {
   equippedSkin: string;
   endlessBest: number;
   dailyBest: Record<string, number>; // dateKey -> best score
+  dailyStreak: DailyStreak;
   settings: GameSettings;
 }
 
@@ -52,6 +58,7 @@ function defaultSave(): SaveData {
     equippedSkin: "default",
     endlessBest: 0,
     dailyBest: {},
+    dailyStreak: { count: 0, lastLoginDate: "" },
     settings: defaultSettings(),
   };
 }
@@ -146,6 +153,28 @@ export function setDailyBest(score: number) {
     data.dailyBest[key] = score;
     saveSave(data);
   }
+}
+
+function localDateKey(d: Date): string {
+  return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
+}
+
+// Daily login streak: consecutive local days. Missing a day resets to 1.
+export function recordDailyLogin(): { count: number; isNewDay: boolean } {
+  const data = loadSave();
+  const today = localDateKey(new Date());
+  if (data.dailyStreak.lastLoginDate === today) {
+    return { count: data.dailyStreak.count, isNewDay: false };
+  }
+  const yesterday = new Date();
+  yesterday.setDate(yesterday.getDate() - 1);
+  const continued = data.dailyStreak.lastLoginDate === localDateKey(yesterday);
+  data.dailyStreak = {
+    count: continued ? data.dailyStreak.count + 1 : 1,
+    lastLoginDate: today,
+  };
+  saveSave(data);
+  return { count: data.dailyStreak.count, isNewDay: true };
 }
 
 export const SKINS = [
