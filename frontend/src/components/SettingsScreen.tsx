@@ -1,6 +1,6 @@
 import { ChevronLeft, Eye, Waves, Gauge, Music, Volume2, Move, Contrast } from "lucide-react";
 import { getSettings, updateSettings, type GameSettings } from "@/game/storage";
-import { setMusicVolume, setSfxVolume } from "@/game/audio";
+import { setMusicVolume, setSfxVolume, setMusicEnabled, setSfxEnabled } from "@/game/audio";
 import { useState } from "react";
 
 interface Props {
@@ -10,9 +10,11 @@ interface Props {
 export default function SettingsScreen({ onBack }: Props) {
   const [settings, setSettings] = useState<GameSettings>(() => getSettings());
 
-  function toggle(key: "reducedShake" | "colorblindMode") {
+  function toggle(key: "reducedShake" | "colorblindMode" | "musicEnabled" | "sfxEnabled") {
     const next = updateSettings({ [key]: !settings[key] });
     setSettings(next);
+    if (key === "musicEnabled") setMusicEnabled(next.musicEnabled);
+    if (key === "sfxEnabled") setSfxEnabled(next.sfxEnabled);
   }
 
   function setNum(key: keyof GameSettings, value: number) {
@@ -36,6 +38,22 @@ export default function SettingsScreen({ onBack }: Props) {
       </div>
 
       <div className="flex flex-col gap-4">
+        <SettingRow
+          icon={<Music size={18} />}
+          title="Music"
+          subtitle="Background ambient music on/off"
+          control={
+            <Toggle checked={settings.musicEnabled} onChange={() => toggle("musicEnabled")} testid="music-toggle" />
+          }
+        />
+        <SettingRow
+          icon={<Volume2 size={18} />}
+          title="Sound Effects"
+          subtitle="Jump, death, checkpoint and UI sounds on/off"
+          control={
+            <Toggle checked={settings.sfxEnabled} onChange={() => toggle("sfxEnabled")} testid="sfx-toggle" />
+          }
+        />
         <Slider
           icon={<Music size={18} />}
           title="Music Volume"
@@ -147,10 +165,11 @@ function SettingRow({
   );
 }
 
-function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
+function Toggle({ checked, onChange, testid }: { checked: boolean; onChange: () => void; testid?: string }) {
   return (
     <button
       onClick={onChange}
+      data-testid={testid}
       className={`w-12 h-7 rounded-full flex items-center px-1 transition-colors shrink-0 ${
         checked ? "bg-cyan-400 justify-end" : "bg-white/15 justify-start"
       }`}

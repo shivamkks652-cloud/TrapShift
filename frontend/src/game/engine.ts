@@ -543,7 +543,12 @@ export class GameEngine {
         if (this.isSolidTerrain(tx, ty)) rects.push(tileRect(tx, ty));
       }
     }
-    for (const m of this.level.movingWalls ?? []) rects.push(this.movingWallRect(m, this.time));
+    // Rideable shuttle platforms stay solid; lethal crushers/piston walls are NOT
+    // added as solids (they kill on contact via checkHazards) so they can never
+    // eject the player through the floor.
+    for (const m of this.level.movingWalls ?? []) {
+      if (classifyMovingWall(m) === "platform") rects.push(this.movingWallRect(m, this.time));
+    }
     for (const e of this.level.explodingPlatforms ?? []) {
       const r = this.explodingRect(e);
       if (r) rects.push(r);
@@ -714,6 +719,24 @@ export class GameEngine {
       if (phase !== "sweep") continue;
       if (rectsOverlap(playerRect, rect)) {
         this.die("firewall");
+        return;
+      }
+    }
+    // Moving crushers / piston walls are lethal when they close on the player.
+    // Rideable shuttle platforms (wide & flat) never kill. A small inset means a
+    // flush stand-beside doesn't trigger — only a genuine crush/penetration does.
+    for (const m of this.level.movingWalls ?? []) {
+      if (classifyMovingWall(m) === "platform") continue;
+      const r = this.movingWallRect(m, this.time);
+      const inset = 3;
+      const pr = {
+        x: this.player.x + inset,
+        y: this.player.y + inset,
+        w: this.player.w - inset * 2,
+        h: this.player.h - inset * 2,
+      };
+      if (rectsOverlap(pr, r)) {
+        this.die("crush");
         return;
       }
     }
@@ -939,6 +962,13 @@ export class GameEngine {
         this.spawnParticles(cx, cy, 26, "#39ffb0", 320, Math.PI * 2, "square");
         this.screenFlash = { color: "#39ffb0", alpha: 0.6 };
         vibrate([15, 25, 15]);
+        break;
+      case "crush":
+        sfx.crusherClunk();
+        sfx.death();
+        this.spawnParticles(cx, cy, 24, "#ff8a3d", 300, Math.PI * 2, "square");
+        this.screenFlash = { color: "#ff8a3d", alpha: 0.6 };
+        vibrate([45]);
         break;
       default:
         sfx.death();

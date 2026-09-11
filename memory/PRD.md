@@ -168,3 +168,12 @@ User feedback: "Level 2 se beep chal raha hai + sound crack ho raha hai."
 - ROOT CAUSE 2 (crackling): musicGain (0.52) + sfxGain (1.0) both fed destination directly; stacked SFX+music clipped past 1.0.
 - Fixes in audio.ts: (a) gate hums now low energy rumble 115Hz sine / 170Hz triangle; (b) new stopAllHums() exported, called from GameCanvas unmount cleanup; (c) master DynamicsCompressor (-12dB threshold, 12:1) inserted before destination; BASE_MUSIC 0.45, BASE_SFX 0.85; (d) ambient chime capped at 2x octave with soft 0.15s attack.
 Verified: tsc clean, mock audio test (49 configs + hum lifecycle) clean, headless bot 43/43 PASS.
+
+## Piston Lethality + Audio Toggles + Full E2E (2026-06-11) — DONE
+User feedback (Hinglish): "Piston Alley me kuch nahi hota, piston ke paas jaane par player marna chahiye; respawn checkpoint se ho start se nahi; sound fix; Music/SFX on-off; full E2E test."
+- ENGINE FIX (real bug): moving crusher/piston walls were solid-only, never lethal. Now checkHazards() kills on overlap of any non-"platform" MovingWall with cause "crush" (sfx.crusherClunk+death, orange particles, vibrate). collectSolids() no longer adds non-platform walls as solids (prevents eject-through-floor "fell" deaths). Verified via headless engine test: w2-1 piston crushes a standing player (cause=crush); respawn uses latest activeCheckpoint else level start.
+- LEVEL TUNING: w2-1 "Piston Alley" piston speed 1.9→1.1 for fair, telegraphed timing (hard-but-fair). Verified solvable.
+- AUTO-BOT: all_test.ts bot upgraded with stop-and-go navigation for lethal moving walls (sit in safe column left of nearest wall, dash across only when it stays retracted ~0.75s). Result: ALL 43 levels PASS again.
+- AUDIO: added Music ON/OFF (musicEnabled) + SFX ON/OFF (sfxEnabled) to GameSettings (default true), gated via setMusicEnabled/setSfxEnabled (musicGain/sfxGain=0 when off), persisted in localStorage, applied at App boot. SettingsScreen has music-toggle + sfx-toggle. (Beep/crackling already root-fixed earlier: low-freq gate hums + master compressor + pure-ambient music.)
+- HUD data-testids added: hud-timer, hud-shards, hud-death-counter, hud-pause-btn.
+- Testing: tsc clean; headless 43/43 PASS; testing_agent iteration_7 = ZERO bugs, 100% acceptance criteria (menu testids, settings toggle persistence, w1-1 death/respawn via HUD death counter, w2-1 loads/pistons animate, no console errors).

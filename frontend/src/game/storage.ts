@@ -12,6 +12,8 @@ export interface GameSettings {
   reducedShake: boolean;
   colorblindMode: boolean;
   touchSensitivity: number; // 0.6 - 1.6, multiplier on control responsiveness
+  musicEnabled: boolean;
+  sfxEnabled: boolean;
   musicVolume: number; // 0 - 1
   sfxVolume: number; // 0 - 1
   touchScale: number; // 0.8 - 1.4, on-screen button size
@@ -42,6 +44,8 @@ function defaultSettings(): GameSettings {
     reducedShake: false,
     colorblindMode: false,
     touchSensitivity: 1,
+    musicEnabled: true,
+    sfxEnabled: true,
     musicVolume: 0.8,
     sfxVolume: 1,
     touchScale: 1,

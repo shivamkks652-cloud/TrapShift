@@ -7,7 +7,7 @@ import EndlessScreen from "@/components/EndlessScreen";
 import SkinShop from "@/components/SkinShop";
 import SettingsScreen from "@/components/SettingsScreen";
 import { getLevelById } from "@/game/levels";
-import { isMuted, setMuted, setMusicVolume, setSfxVolume, initAudioLifecycle } from "@/game/audio";
+import { isMuted, setMuted, setMusicVolume, setSfxVolume, setMusicEnabled, setSfxEnabled, initAudioLifecycle } from "@/game/audio";
 import { getSettings } from "@/game/storage";
 import { initAds, showMenuBanner, hideMenuBanner } from "@/game/ads";
 
@@ -37,6 +37,8 @@ function App() {
     const s = getSettings();
     setMusicVolume(s.musicVolume);
     setSfxVolume(s.sfxVolume);
+    setMusicEnabled(s.musicEnabled);
+    setSfxEnabled(s.sfxEnabled);
     initAudioLifecycle();
     void initAds();
   }, []);

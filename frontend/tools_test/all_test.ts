@@ -1,4 +1,4 @@
-import { GameEngine, type InputState } from "../src/game/engine";
+import { GameEngine, type InputState, classifyMovingWall } from "../src/game/engine";
 import { ALL_LEVELS } from "../src/game/levels";
 import { TILE, type LevelDef } from "../src/game/types";
 
@@ -88,7 +88,36 @@ for (const lv of levels) {
         break;
       }
       const wantRight = targetX > e.player.x ? goRight : !goRight;
-      e.update(dt, { left: !wantRight, right: wantRight, jumpPressed: jump, jumpHeld: jump });
+      // Stop-and-go navigation for lethal moving walls (pistons/crushers): sit in
+      // the safe column just left of the nearest extended wall, then dash across
+      // only when that wall will stay retracted long enough to cross it.
+      let nav: number | null = null; // -1 brake-left, 0 wait, 1 dash-right
+      if (e.player.onGround) {
+        const feetRight = e.player.x + e.player.w;
+        const feetCol = Math.floor(feetRight / TILE);
+        let wc = Infinity, wall: any = null;
+        for (const m of lv.movingWalls ?? []) {
+          if (classifyMovingWall(m) === "platform") continue;
+          if (m.x + m.w > feetCol && m.x < feetCol + 7 && m.x < wc) { wc = m.x; wall = m; }
+        }
+        if (wall) {
+          let clearWindow = true;
+          for (let k = 0; k <= 0.75; k += 0.1) {
+            const tt = e.time + k;
+            const dist = (Math.sin(tt * wall.speed + (wall.phase ?? 0) * Math.PI * 2) * 0.5 + 0.5) * wall.range;
+            const wallBot = (wall.y + dist + wall.h) * TILE;
+            if (wallBot > e.player.y + 2) { clearWindow = false; break; }
+          }
+          const safeX = (wc - 1) * TILE;
+          if (clearWindow) nav = 1;
+          else nav = feetRight > wc * TILE - 1 ? -1 : e.player.x < safeX - 2 ? 1 : 0;
+        }
+      }
+      if (nav !== null) {
+        e.update(dt, { left: nav === -1, right: nav === 1, jumpPressed: false, jumpHeld: false });
+      } else {
+        e.update(dt, { left: !wantRight, right: wantRight, jumpPressed: jump, jumpHeld: jump });
+      }
     }
   }
   const reachedEnd = maxX >= exitX - TILE * 2;

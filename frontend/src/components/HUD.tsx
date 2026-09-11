@@ -20,9 +20,9 @@ export default function HUD({ level, shardsCollected, elapsed, deaths, onPause }
   return (
     <div className="absolute top-0 inset-x-0 flex items-start justify-between p-4 pointer-events-none z-10">
       <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md rounded-2xl px-4 py-2 border border-white/10">
-        <span className="font-mono text-sm text-white/90 tabular-nums">{formatTime(elapsed)}</span>
+        <span className="font-mono text-sm text-white/90 tabular-nums" data-testid="hud-timer">{formatTime(elapsed)}</span>
         <div className="w-px h-4 bg-white/20" />
-        <div className="flex items-center gap-1 text-amber-300 text-sm">
+        <div className="flex items-center gap-1 text-amber-300 text-sm" data-testid="hud-shards">
           <Zap size={14} className="fill-amber-300" />
           <span className="tabular-nums">
             {shardsCollected}/{shardsTotal}
@@ -31,12 +31,13 @@ export default function HUD({ level, shardsCollected, elapsed, deaths, onPause }
         {deaths > 0 && (
           <>
             <div className="w-px h-4 bg-white/20" />
-            <span className="text-xs text-white/50">{deaths} deaths</span>
+            <span className="text-xs text-white/50" data-testid="hud-death-counter">{deaths} deaths</span>
           </>
         )}
       </div>
       <button
         onClick={onPause}
+        data-testid="hud-pause-btn"
         className="pointer-events-auto w-11 h-11 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center active:scale-90 transition-transform"
       >
         <Pause size={18} />

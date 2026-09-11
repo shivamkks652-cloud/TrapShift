@@ -7,6 +7,8 @@ let sfxGain: GainNode | null = null;
 let masterComp: DynamicsCompressorNode | null = null;
 let currentMusicNodes: { stop: () => void } | null = null;
 let muted = false;
+let musicEnabled = true;
+let sfxEnabled = true;
 const BASE_MUSIC = 0.45;
 const BASE_SFX = 0.85;
 let musicVol = 0.8;
@@ -60,20 +62,38 @@ export function initAudioLifecycle() {
   });
 }
 
+function applyMusicGain() {
+  if (musicGain) musicGain.gain.value = muted || !musicEnabled ? 0 : BASE_MUSIC * musicVol;
+}
+
+function applySfxGain() {
+  if (sfxGain) sfxGain.gain.value = muted || !sfxEnabled ? 0 : BASE_SFX * sfxVol;
+}
+
 export function setMuted(v: boolean) {
   muted = v;
-  if (musicGain) musicGain.gain.value = v ? 0 : BASE_MUSIC * musicVol;
-  if (sfxGain) sfxGain.gain.value = v ? 0 : BASE_SFX * sfxVol;
+  applyMusicGain();
+  applySfxGain();
+}
+
+export function setMusicEnabled(v: boolean) {
+  musicEnabled = v;
+  applyMusicGain();
+}
+
+export function setSfxEnabled(v: boolean) {
+  sfxEnabled = v;
+  applySfxGain();
 }
 
 export function setMusicVolume(v: number) {
   musicVol = Math.max(0, Math.min(1, v));
-  if (musicGain && !muted) musicGain.gain.value = BASE_MUSIC * musicVol;
+  applyMusicGain();
 }
 
 export function setSfxVolume(v: number) {
   sfxVol = Math.max(0, Math.min(1, v));
-  if (sfxGain && !muted) sfxGain.gain.value = BASE_SFX * sfxVol;
+  applySfxGain();
 }
 
 export function isMuted() {
