@@ -177,3 +177,9 @@ User feedback (Hinglish): "Piston Alley me kuch nahi hota, piston ke paas jaane 
 - AUDIO: added Music ON/OFF (musicEnabled) + SFX ON/OFF (sfxEnabled) to GameSettings (default true), gated via setMusicEnabled/setSfxEnabled (musicGain/sfxGain=0 when off), persisted in localStorage, applied at App boot. SettingsScreen has music-toggle + sfx-toggle. (Beep/crackling already root-fixed earlier: low-freq gate hums + master compressor + pure-ambient music.)
 - HUD data-testids added: hud-timer, hud-shards, hud-death-counter, hud-pause-btn.
 - Testing: tsc clean; headless 43/43 PASS; testing_agent iteration_7 = ZERO bugs, 100% acceptance criteria (menu testids, settings toggle persistence, w1-1 death/respawn via HUD death counter, w2-1 loads/pistons animate, no console errors).
+
+## Piston Danger Glow + Endless New Best (2026-06-11) — DONE
+User approved two enhancements.
+- PISTON TELEGRAPH (render.ts): for lethal crusher/plasmaWall moving walls (axis "y"), when the piston is retracted but about to slam down (velocity>0 and dist<range*0.6), drawPistonWarning() pulses a red-orange floor glow strip + rising danger column + chevron markers at the piston's landing point. Also brightens the crusher (nearEnd||slammingSoon). Makes the timing window readable = hard-but-fair. Verified visually in w2-1 (red glow under pistons; HUD "1 deaths" confirmed piston crush + respawn working live).
+- ENDLESS NEW BEST (EndlessScreen.tsx): on game over, detect score>prevBest (before persisting) -> isNewBest state -> show a glowing "NEW BEST!" trophy badge (data-testid=new-best-badge) + confetti burst (reuses global .ts-confetti-piece CSS) + sfx.win(). Resets on retry. Works for both endless and daily modes.
+Verified: tsc clean, headless 43/43 PASS, w2-1 piston glow + crush/respawn visually confirmed, no console errors.

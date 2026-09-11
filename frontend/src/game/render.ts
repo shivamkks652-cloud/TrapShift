@@ -181,9 +181,15 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
     const h = m.h * TILE;
     const kind = classifyMovingWall(m);
     const nearEnd = dist < m.range * 0.06 || dist > m.range * 0.94;
-    if (kind === "crusher") drawCrusher(ctx, x, y, w, h, frame, nearEnd);
-    else if (kind === "plasmaWall") drawPlasmaWall(ctx, x, y, w, h, frame);
-    else drawMovingPlatform(ctx, x, y, w, h, frame);
+    if (kind === "crusher" || kind === "plasmaWall") {
+      // Fair telegraph: piston retracted but about to slam down — pulse the floor
+      // danger zone so the player can read the timing before committing.
+      const vel = Math.cos(engine.time * m.speed + (m.phase ?? 0) * Math.PI * 2);
+      const slammingSoon = m.axis === "y" && vel > 0 && dist < m.range * 0.6;
+      if (slammingSoon) drawPistonWarning(ctx, x, (m.y + m.range + m.h) * TILE, w, frame);
+      if (kind === "crusher") drawCrusher(ctx, x, y, w, h, frame, nearEnd || slammingSoon);
+      else drawPlasmaWall(ctx, x, y, w, h, frame);
+    } else drawMovingPlatform(ctx, x, y, w, h, frame);
   }
 
   // rotating platforms — neon saw blade
@@ -598,6 +604,39 @@ function drawCrusher(ctx: CanvasRenderingContext2D, x: number, y: number, w: num
     ctx.lineWidth = 2;
     ctx.strokeRect(x + 1, y + 1, w - 2, h - 2);
   }
+  ctx.restore();
+}
+
+function drawPistonWarning(ctx: CanvasRenderingContext2D, x: number, floorY: number, w: number, frame: number) {
+  ctx.save();
+  const pulse = 0.55 + Math.abs(Math.sin(frame / 5)) * 0.45;
+  // glowing hazard strip on the floor directly beneath the piston's slam point
+  ctx.globalAlpha = 0.7 * pulse;
+  const grad = ctx.createLinearGradient(x, floorY - 8, x, floorY);
+  grad.addColorStop(0, "#ff3d5c00");
+  grad.addColorStop(1, "#ff3d5c");
+  ctx.fillStyle = grad;
+  ctx.shadowColor = "#ff3d5c";
+  ctx.shadowBlur = 20 * pulse;
+  ctx.fillRect(x - 4, floorY - 8, w + 8, 8);
+  ctx.shadowBlur = 0;
+  // rising danger column so the slam path reads even mid-screen
+  ctx.globalAlpha = 0.16 * pulse;
+  ctx.fillStyle = "#ff3d5c";
+  ctx.fillRect(x + w * 0.28, floorY - 48, w * 0.44, 42);
+  // chevron warning markers on the floor strip
+  ctx.globalAlpha = 0.8 * pulse;
+  ctx.strokeStyle = "#ffd34d";
+  ctx.lineWidth = 2;
+  const chevY = floorY - 4;
+  for (const cxo of [w * 0.3, w * 0.7]) {
+    ctx.beginPath();
+    ctx.moveTo(x + cxo - 3, chevY - 3);
+    ctx.lineTo(x + cxo, chevY + 2);
+    ctx.lineTo(x + cxo + 3, chevY - 3);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
