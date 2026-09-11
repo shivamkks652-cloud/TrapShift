@@ -199,3 +199,11 @@ User: privacy-policy.html not working on https://trapshift-deathfix.emergent.hos
 - CONSTRAINT: Capacitor webDir = "dist/public" (nested) is REQUIRED for Android AAB build — do NOT change vite outDir.
 - KEY INSIGHT: Play Store launch = local Capacitor AAB (independent of web deploy). Only thing needing a URL = privacy policy.
 - SOLUTION GIVEN: Host privacy-policy.html on GitHub Pages (copy frontend/public/privacy-policy.html to repo root, Settings->Pages->main branch). Permanent URL independent of Emergent. support@emergent.sh (job fc4687fb-1d74-4253-a898-909411406792) for the web-deploy fix if a live web version is wanted.
+
+## GitHub Pages Marketing Site + Privacy Policy (2026-06-11) — READY (user to push)
+Prepared GitHub Pages files at repo ROOT (/app):
+- index.html — neon landing/marketing page (logo, feature graphic, features grid, gameplay screenshots, Privacy Policy link). Uses relative asset paths (assets/...) so it works on GitHub Pages project site (username.github.io/repo/).
+- privacy-policy.html — same privacy policy but with RELATIVE image path (icon-192.png) fixed for GitHub Pages project-site subpath.
+- icon-192.png, icon-512.png, assets/ (feature_graphic, app_icon_512, phone_01/02/03 screenshots) at root.
+Verified locally via python http.server: index.html 200, privacy-policy.html 200, images 200, landing page renders on desktop+mobile.
+USER ACTION: use "Save to Github" (or git pull locally) to get these files, push to GitHub, then Repo Settings -> Pages -> Deploy from branch 'main' (root). Privacy URL = https://<username>.github.io/<repo>/privacy-policy.html
