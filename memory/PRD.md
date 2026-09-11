@@ -207,3 +207,10 @@ Prepared GitHub Pages files at repo ROOT (/app):
 - icon-192.png, icon-512.png, assets/ (feature_graphic, app_icon_512, phone_01/02/03 screenshots) at root.
 Verified locally via python http.server: index.html 200, privacy-policy.html 200, images 200, landing page renders on desktop+mobile.
 USER ACTION: use "Save to Github" (or git pull locally) to get these files, push to GitHub, then Repo Settings -> Pages -> Deploy from branch 'main' (root). Privacy URL = https://<username>.github.io/<repo>/privacy-policy.html
+
+## GitHub Pages — docs/ folder (2026-06-11) — READY (user to push + enable)
+IMPORTANT: User's GitHub repo is shivamkks652-cloud/TrapShift and its ROOT = frontend project (src/, public/, android/, BUILD.md at root, NOT a frontend/ wrapper). So GitHub Pages files must NOT go in repo root (would conflict with the Vite game index.html). 
+- Moved site files into frontend/docs/ (=> repo-root/docs/ when frontend is pushed): docs/index.html (neon landing page), docs/privacy-policy.html, docs/icon-192.png, docs/icon-512.png, docs/assets/ (feature graphic, app_icon_512, phone_01/02/03). All paths RELATIVE so they work on project-site subpath /TrapShift/.
+- Verified self-contained via local http.server: / 200, /privacy-policy.html 200, all images 200.
+USER ACTION: push (Save to Github) so docs/ reaches repo, then Settings -> Pages -> Source: Deploy from branch 'main', Folder: '/docs' -> Save.
+Final URLs: Landing = https://shivamkks652-cloud.github.io/TrapShift/  |  Privacy = https://shivamkks652-cloud.github.io/TrapShift/privacy-policy.html
