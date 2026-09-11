@@ -183,3 +183,12 @@ User approved two enhancements.
 - PISTON TELEGRAPH (render.ts): for lethal crusher/plasmaWall moving walls (axis "y"), when the piston is retracted but about to slam down (velocity>0 and dist<range*0.6), drawPistonWarning() pulses a red-orange floor glow strip + rising danger column + chevron markers at the piston's landing point. Also brightens the crusher (nearEnd||slammingSoon). Makes the timing window readable = hard-but-fair. Verified visually in w2-1 (red glow under pistons; HUD "1 deaths" confirmed piston crush + respawn working live).
 - ENDLESS NEW BEST (EndlessScreen.tsx): on game over, detect score>prevBest (before persisting) -> isNewBest state -> show a glowing "NEW BEST!" trophy badge (data-testid=new-best-badge) + confetti burst (reuses global .ts-confetti-piece CSS) + sfx.win(). Resets on retry. Works for both endless and daily modes.
 Verified: tsc clean, headless 43/43 PASS, w2-1 piston glow + crush/respawn visually confirmed, no console errors.
+
+## Privacy Policy Page (2026-06-11) — DONE
+User asked: "Privacy policy page" (needed for Play Store listing Step 4).
+- Created public/privacy-policy.html — a standalone static page (no build deps) served at /privacy-policy.html.
+- Neon theme matches game identity (dark bg, cyan #4bf3ff + magenta accents, card layout, responsive).
+- Content: offline game, NO personal data collected, local-storage-only saves (levels/streak/settings), no accounts/ads/tracking, device permissions (vibration/audio only), children's privacy (Everyone), data security, contact email trapshift.game@gmail.com.
+- Public URL (preview): https://trapshift-deathfix.preview.emergentagent.com/privacy-policy.html
+Verified: renders on desktop + mobile, 11 sections, correct title, no console errors.
+NOTE: For Play Store, host this at the production domain (the preview URL is temporary). Replace contact email with the real developer email before launch.
