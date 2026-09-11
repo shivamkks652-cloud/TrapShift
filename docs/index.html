@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TrapShift — Neon Puzzle Platformer</title>
+  <meta name="description" content="TrapShift — nothing is what it looks like. A neon puzzle-platformer across 7 worlds and 42 handcrafted levels. Think first, then shift." />
+  <meta name="theme-color" content="#020814" />
+  <meta property="og:title" content="TrapShift — Neon Puzzle Platformer" />
+  <meta property="og:description" content="Nothing is what it looks like. 42 handcrafted puzzle levels across 7 neon worlds." />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="assets/feature_graphic_1024x500.png" />
+  <link rel="icon" type="image/png" href="assets/app_icon_512.png" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: radial-gradient(120% 120% at 50% 0%, #150826 0%, #0b1026 45%, #020814 100%);
+      color: #dbe4ff;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+    .wrap { max-width: 1000px; margin: 0 auto; padding: 40px 20px 80px; }
+    header { text-align: center; padding: 30px 0 10px; }
+    header img.logo { width: 110px; height: 110px; filter: drop-shadow(0 0 28px rgba(75,243,255,0.55)); animation: float 4s ease-in-out infinite; }
+    @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+    h1 { font-size: clamp(2.4rem, 7vw, 4rem); font-weight: 900; letter-spacing: -0.03em; color: #fff; margin-top: 18px; }
+    h1 span { color: #4bf3ff; }
+    .tag { color: rgba(219,228,255,0.55); font-size: 1.05rem; margin-top: 10px; letter-spacing: 0.02em; }
+    .hero { margin: 36px 0; border-radius: 22px; overflow: hidden; border: 1px solid rgba(75,243,255,0.25); box-shadow: 0 0 50px rgba(75,243,255,0.15); }
+    .hero img { width: 100%; display: block; }
+    .cta { text-align: center; margin: 10px 0 40px; }
+    .btn {
+      display: inline-block; background: #4bf3ff; color: #0b0a1f; font-weight: 700;
+      padding: 15px 40px; border-radius: 999px; text-decoration: none; font-size: 1.05rem;
+      box-shadow: 0 0 30px rgba(75,243,255,0.5); transition: transform 0.15s ease;
+    }
+    .btn:hover { transform: scale(1.05); }
+    .btn.secondary { background: rgba(255,255,255,0.08); color: #fff; box-shadow: none; border: 1px solid rgba(255,255,255,0.15); margin-left: 12px; }
+    h2 { text-align: center; font-size: 1.6rem; font-weight: 800; color: #fff; margin: 50px 0 24px; }
+    h2 span { color: #ff3df0; }
+    .features { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; }
+    .feat { background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; padding: 22px; }
+    .feat .n { color: #4bf3ff; font-size: 1.6rem; font-weight: 800; }
+    .feat .t { color: #fff; font-weight: 600; margin-top: 6px; }
+    .feat .d { color: rgba(219,228,255,0.6); font-size: 0.88rem; margin-top: 6px; line-height: 1.5; }
+    .shots { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; }
+    .shots img { width: 100%; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1); display: block; }
+    footer { text-align: center; margin-top: 60px; color: rgba(219,228,255,0.4); font-size: 0.85rem; line-height: 2; }
+    footer a { color: #4bf3ff; text-decoration: none; }
+    footer a:hover { text-decoration: underline; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <img class="logo" src="assets/app_icon_512.png" alt="TrapShift logo" />
+      <h1>TRAP<span>SHIFT</span></h1>
+      <div class="tag">Nothing is what it looks like. Think first, then shift.</div>
+    </header>
+
+    <div class="hero">
+      <img src="assets/feature_graphic_1024x500.png" alt="TrapShift gameplay" />
+    </div>
+
+    <div class="cta">
+      <a class="btn" href="#screenshots">See Gameplay</a>
+      <a class="btn secondary" href="privacy-policy.html">Privacy Policy</a>
+    </div>
+
+    <h2>Easy to learn. <span>Hard to master.</span></h2>
+    <div class="features">
+      <div class="feat"><div class="n">42</div><div class="t">Handcrafted Levels</div><div class="d">Brain-teaser puzzles across 7 neon cyberpunk worlds.</div></div>
+      <div class="feat"><div class="n">7</div><div class="t">Unique Worlds</div><div class="d">Gravity flips, lasers, steam jets, firewalls &amp; chaos rifts.</div></div>
+      <div class="feat"><div class="n">100%</div><div class="t">Offline</div><div class="d">No ads, no tracking, no account. Play anywhere.</div></div>
+      <div class="feat"><div class="n">&#8734;</div><div class="t">Endless + Daily</div><div class="t" style="font-weight:500">Challenge modes, skins &amp; daily streaks.</div></div>
+    </div>
+
+    <h2 id="screenshots">Game<span>play</span></h2>
+    <div class="shots">
+      <img src="assets/phone_01_title.png" alt="TrapShift level 1" />
+      <img src="assets/phone_02.png" alt="TrapShift level 2" />
+      <img src="assets/phone_03.png" alt="TrapShift level 3" />
+    </div>
+
+    <footer>
+      &copy; 2026 TrapShift. All rights reserved.<br />
+      <a href="privacy-policy.html">Privacy Policy</a> &nbsp;|&nbsp; Made with neon &amp; puzzles.
+    </footer>
+  </div>
+</body>
+</html>

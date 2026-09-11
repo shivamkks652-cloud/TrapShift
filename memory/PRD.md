@@ -214,3 +214,11 @@ IMPORTANT: User's GitHub repo is shivamkks652-cloud/TrapShift and its ROOT = fro
 - Verified self-contained via local http.server: / 200, /privacy-policy.html 200, all images 200.
 USER ACTION: push (Save to Github) so docs/ reaches repo, then Settings -> Pages -> Source: Deploy from branch 'main', Folder: '/docs' -> Save.
 Final URLs: Landing = https://shivamkks652-cloud.github.io/TrapShift/  |  Privacy = https://shivamkks652-cloud.github.io/TrapShift/privacy-policy.html
+
+## GitHub Pages 404 Fix (2026-06-11) — RESOLVED (page content verified)
+User reported 404 on GitHub Pages URL. Root cause: docs/ was never on GitHub + branch/folder confusion. Repo branches: main (old, frontend-at-root), Trapshift1 (full /app monorepo, this is what Emergent "Save to Github" pushes).
+- FIX: created /app/docs/ (monorepo root) with index.html + privacy-policy.html + icons + assets/ => lands at Trapshift1 branch root /docs/. Also kept /app/frontend/docs/.
+- GitHub Pages source must be: branch **Trapshift1**, folder **/docs**.
+- testing_agent iteration_8: privacy policy page 100% PASS (HTTP 200, title/H1, logo naturalWidth=192, all 11 sections, mailto present, mobile no-overflow, zero console errors) — Play-Store-ready.
+Final privacy URL: https://shivamkks652-cloud.github.io/TrapShift/privacy-policy.html
+USER ACTION: Save to Github (pushes docs/ to Trapshift1) -> Settings -> Pages -> branch Trapshift1, folder /docs -> Save.
