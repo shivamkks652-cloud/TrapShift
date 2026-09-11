@@ -192,3 +192,10 @@ User asked: "Privacy policy page" (needed for Play Store listing Step 4).
 - Public URL (preview): https://trapshift-deathfix.preview.emergentagent.com/privacy-policy.html
 Verified: renders on desktop + mobile, 11 sections, correct title, no console errors.
 NOTE: For Play Store, host this at the production domain (the preview URL is temporary). Replace contact email with the real developer email before launch.
+
+## Deployment Issue + GitHub Pages Solution (2026-06-11) — GUIDED
+User: privacy-policy.html not working on https://trapshift-deathfix.emergent.host/ (nginx default page even after Deploy).
+- DIAGNOSIS: emergent.host (production) serves nginx default 615-byte page for ALL routes. Preview URL (emergentagent.com) works perfectly. Root cause = leftover Replit config /app/frontend/.replit-artifact/artifact.toml references non-existent pnpm workspace "@workspace/trapshift" + path "artifacts/trapshift/dist/public" — production build fails -> nginx default fallback. Preview ignores artifact.toml (uses supervisor+yarn), so it works.
+- CONSTRAINT: Capacitor webDir = "dist/public" (nested) is REQUIRED for Android AAB build — do NOT change vite outDir.
+- KEY INSIGHT: Play Store launch = local Capacitor AAB (independent of web deploy). Only thing needing a URL = privacy policy.
+- SOLUTION GIVEN: Host privacy-policy.html on GitHub Pages (copy frontend/public/privacy-policy.html to repo root, Settings->Pages->main branch). Permanent URL independent of Emergent. support@emergent.sh (job fc4687fb-1d74-4253-a898-909411406792) for the web-deploy fix if a live web version is wanted.
