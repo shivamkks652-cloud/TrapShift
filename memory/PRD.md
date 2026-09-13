@@ -222,3 +222,13 @@ User reported 404 on GitHub Pages URL. Root cause: docs/ was never on GitHub + b
 - testing_agent iteration_8: privacy policy page 100% PASS (HTTP 200, title/H1, logo naturalWidth=192, all 11 sections, mailto present, mobile no-overflow, zero console errors) — Play-Store-ready.
 Final privacy URL: https://shivamkks652-cloud.github.io/TrapShift/privacy-policy.html
 USER ACTION: Save to Github (pushes docs/ to Trapshift1) -> Settings -> Pages -> branch Trapshift1, folder /docs -> Save.
+
+## AdMob Integration Backbone + Stronger Audio (2026-06-13) — PARTIAL/READY
+User gave real AdMob IDs (publisher 3735972538807236): Rewarded 2262699194, Banner 3575780862, Interstitial 1987367024. Chose policy-safe optional rewarded-after-death + Google TEST ids in dev.
+- Installed @capacitor-community/admob@8.1.0 (Capacitor 8 compatible). NOTE: install downgraded typescript to 4.2.4 (broke tsc) -> re-pinned typescript@5.6.3 (tsc clean again).
+- Rewrote src/game/ads.ts as the single ads boundary: AdConfig (real prod IDs when import.meta.env.PROD, Google TEST ids in dev), initAds() with UMP consent (safe try/catch, never blocks launch), showMenuBanner/hideMenuBanner, showRewardedContinue() (reward ONLY on RewardAdPluginEvents.Rewarded; fail/dismiss=false; rewardInFlight guard = one ad per death), isRewardedAdAvailable, showRewardedBonus alias. ALL calls guarded by Capacitor.isNativePlatform() -> web preview = safe no-op (verified: menu loads, no crash).
+- Stronger audio: BASE_MUSIC 0.45->0.5, BASE_SFX 0.85->1.0, master compressor threshold -12->-8 (louder before limiting).
+- Verified: tsc clean, headless 43/43 PASS, web smoke (menu loads, no plugin crash).
+### MOCKED / native-only + remaining
+- Real ads run ONLY in the local Android build (web = no-op). USER MUST: (1) put real App ID in AndroidManifest.xml as com.google.android.gms.ads.APPLICATION_ID (format ca-app-pub-3735972538807236~XXXXXXXXXX — get from AdMob App settings; AdConfig.appId has a placeholder to update), (2) yarn install && yarn build && npx cap sync, (3) test with TEST ids first.
+- NOT YET WIRED: the in-game "YOU DIED -> [Watch Ad & Continue] / [Respawn]" overlay for STORY levels (engine currently auto-respawns). showRewardedContinue() is ready to call; needs a death-pause overlay in GameScreen/GameCanvas. Endless/Results already have showRewardedBonus hook.

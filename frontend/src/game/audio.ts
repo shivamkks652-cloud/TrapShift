@@ -9,8 +9,8 @@ let currentMusicNodes: { stop: () => void } | null = null;
 let muted = false;
 let musicEnabled = true;
 let sfxEnabled = true;
-const BASE_MUSIC = 0.45;
-const BASE_SFX = 0.85;
+const BASE_MUSIC = 0.5;
+const BASE_SFX = 1.0;
 let musicVol = 0.8;
 let sfxVol = 1.0;
 let lifecycleBound = false;
@@ -20,7 +20,7 @@ function getCtx(): AudioContext {
     ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
     // Master limiter prevents crack/clipping when music + SFX stack up.
     masterComp = ctx.createDynamicsCompressor();
-    masterComp.threshold.value = -12;
+    masterComp.threshold.value = -8;
     masterComp.knee.value = 20;
     masterComp.ratio.value = 12;
     masterComp.attack.value = 0.003;
