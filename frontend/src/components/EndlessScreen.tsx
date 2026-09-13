@@ -1,8 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import GameCanvas from "./GameCanvas";
+import { DeathOverlay } from "./DeathOverlay";
 import { generateEndlessLevel } from "@/game/endless";
 import { loadSave, setEndlessBest, setDailyBest, todayKey } from "@/game/storage";
 import { startMusic, stopMusic, sfx } from "@/game/audio";
+import { showRewardedContinue } from "@/game/ads";
 import { Home, RotateCcw, Trophy, Zap } from "lucide-react";
 
 const CONFETTI_COLORS = ["#4bf3ff", "#ff3df0", "#ffb23d", "#7dff5c", "#ffffff"];
@@ -42,6 +44,10 @@ export default function EndlessScreen({ mode, onExit }: Props) {
   const [seed, setSeed] = useState(() => (mode === "daily" ? dateSeed() : Math.floor(Math.random() * 1e9)));
   const level = useMemo(() => generateEndlessLevel(seed), [seed]);
   const [gameOver, setGameOver] = useState<{ distance: number; shards: number } | null>(null);
+  const [deathPrompt, setDeathPrompt] = useState<{ cause: string; distance: number; shards: number } | null>(null);
+  const [adBusy, setAdBusy] = useState(false);
+  const [adFailed, setAdFailed] = useState(false);
+  const [reviveSignal, setReviveSignal] = useState(0);
   const [restartSignal, setRestartSignal] = useState(0);
   const [best, setBest] = useState(0);
   const [isNewBest, setIsNewBest] = useState(false);
@@ -71,8 +77,28 @@ export default function EndlessScreen({ mode, onExit }: Props) {
     if (isNew) sfx.win();
   }
 
+  async function handleWatchAd() {
+    setAdBusy(true);
+    setAdFailed(false);
+    const ok = await showRewardedContinue();
+    setAdBusy(false);
+    if (ok) {
+      setDeathPrompt(null);
+      setReviveSignal((s) => s + 1);
+    } else {
+      setAdFailed(true);
+    }
+  }
+
+  function handleEndRun() {
+    if (deathPrompt) handleGameOver({ distance: deathPrompt.distance, shards: deathPrompt.shards });
+    setDeathPrompt(null);
+    setAdFailed(false);
+  }
+
   function handleRetry() {
     setGameOver(null);
+    setDeathPrompt(null);
     setIsNewBest(false);
     if (mode !== "daily") setSeed(Math.floor(Math.random() * 1e9));
     setRestartSignal((s) => s + 1);
@@ -85,18 +111,33 @@ export default function EndlessScreen({ mode, onExit }: Props) {
       <GameCanvas
         level={level}
         onWin={() => {}}
-        paused={!!gameOver}
+        paused={!!gameOver || !!deathPrompt}
         restartSignal={restartSignal}
+        reviveSignal={reviveSignal}
         singleLife
         onGameOver={handleGameOver}
+        onDeathPrompt={(info) => {
+          setAdFailed(false);
+          setDeathPrompt(info);
+        }}
       />
-      {!gameOver && (
+      {!gameOver && !deathPrompt && (
         <div className="absolute top-4 inset-x-0 flex justify-center pointer-events-none">
           <div className="flex items-center gap-3 bg-black/40 backdrop-blur-md rounded-2xl px-4 py-2 border border-white/10 text-white text-sm">
             <Trophy size={14} className="text-amber-300" />
             Best: {best}
           </div>
         </div>
+      )}
+      {deathPrompt && !gameOver && (
+        <DeathOverlay
+          cause={deathPrompt.cause}
+          endless
+          busy={adBusy}
+          adFailed={adFailed}
+          onWatchAd={() => void handleWatchAd()}
+          onRespawn={handleEndRun}
+        />
       )}
       {gameOver && (
         <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/70 backdrop-blur-sm">
@@ -146,7 +187,7 @@ export default function EndlessScreen({ mode, onExit }: Props) {
           </div>
         </div>
       )}
-      {!gameOver && (
+      {!gameOver && !deathPrompt && (
         <button
           onClick={onExit}
           className="absolute top-4 left-4 z-10 w-10 h-10 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-white flex items-center justify-center active:scale-90 transition-transform"

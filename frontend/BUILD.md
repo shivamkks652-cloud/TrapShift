@@ -79,16 +79,22 @@ Output locations:
 - Release APK: `android/app/build/outputs/apk/release/app-release.apk`
 - Release AAB: `android/app/build/outputs/bundle/release/app-release.aab`
 
-## 5. Switch AdMob to production ad units
+## 5. AdMob configuration
 
-Before submitting to the Play Store:
+AdMob is wired via `@capacitor-community/admob` (see `src/game/ads.ts`). Real ads run only on the native build; the web preview simulates them.
 
-1. Create an AdMob app + ad units at [admob.google.com](https://admob.google.com) (banner, interstitial, rewarded).
-2. In `src/game/ads.ts`, set `USE_TEST_ADS = false` and fill in `PROD_AD_UNIT_IDS` with your real IDs.
-3. In `android/app/src/main/res/values/strings.xml`, replace `admob_app_id` with your real AdMob **App ID** (not an ad unit ID).
-4. Rebuild (`npm run build && npx cap sync android`) and re-run the Gradle build.
+- **Ad units** (rewarded `…/2262699194`, banner `…/3575780862`) already live in `src/game/ads.ts`. Dev/debug builds automatically use Google's official TEST units (`import.meta.env.PROD` switch); production builds use the real units.
+- **App ID** — make sure `android/app/src/main/AndroidManifest.xml` contains this inside `<application>`:
 
-Shipping with the default test IDs is safe (Google's official test units) but earns no revenue and must not be submitted to Play as final.
+```xml
+<meta-data
+  android:name="com.google.android.gms.ads.APPLICATION_ID"
+  android:value="ca-app-pub-3735972538807236~2413074131"/>
+```
+
+- Rebuild (`npm run build && npx cap sync android`) and re-run the Gradle build after any ad config change.
+
+Debug builds show test ads — do not click real production ads from your own device during testing (AdMob policy).
 
 ## 6. Play Store checklist
 

@@ -4,11 +4,12 @@ import HUD from "./HUD";
 import PauseOverlay from "./PauseOverlay";
 import ResultsOverlay from "./ResultsOverlay";
 import LevelIntro from "./LevelIntro";
+import { DeathOverlay } from "./DeathOverlay";
 import type { LevelDef } from "@/game/types";
 import { getNextLevelId, getLevelById } from "@/game/levels";
 import { getSettings } from "@/game/storage";
 import { isMuted, setMuted, startMusic, stopMusic, setMusicVolume, setSfxVolume } from "@/game/audio";
-import { maybeShowInterstitialAfterLevelComplete } from "@/game/ads";
+import { maybeShowInterstitialAfterLevelComplete, showRewardedContinue } from "@/game/ads";
 
 interface Props {
   level: LevelDef;
@@ -22,6 +23,11 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
   const [shardsCollected, setShardsCollected] = useState(0);
   const [deaths, setDeaths] = useState(0);
   const [restartSignal, setRestartSignal] = useState(0);
+  const [reviveSignal, setReviveSignal] = useState(0);
+  const [respawnSignal, setRespawnSignal] = useState(0);
+  const [deathPrompt, setDeathPrompt] = useState<{ cause: string } | null>(null);
+  const [adBusy, setAdBusy] = useState(false);
+  const [adFailed, setAdFailed] = useState(false);
   const [result, setResult] = useState<{ timeMs: number; shardsCollected: number; shardsTotal: number; stars: 1 | 2 | 3 } | null>(null);
   const [muted, setMutedState] = useState(isMuted());
   const [toast, setToast] = useState<string | null>(null);
@@ -68,6 +74,8 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
     setShardsCollected(0);
     setDeaths(0);
     setResult(null);
+    setDeathPrompt(null);
+    setAdFailed(false);
     setRestartSignal((s) => s + 1);
     setPhase("playing");
   }
@@ -78,6 +86,25 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
     else if (type === "gateOpen") showToast("Gate opened!");
     else if (type === "switchArmed") showToast("Switch armed");
     else if (type === "switchDenied") showToast("Locked — wrong order!");
+  }
+
+  async function handleWatchAd() {
+    setAdBusy(true);
+    setAdFailed(false);
+    const ok = await showRewardedContinue();
+    setAdBusy(false);
+    if (ok) {
+      setDeathPrompt(null);
+      setReviveSignal((s) => s + 1);
+    } else {
+      setAdFailed(true);
+    }
+  }
+
+  function handleDeathRespawn() {
+    setDeathPrompt(null);
+    setAdFailed(false);
+    setRespawnSignal((s) => s + 1);
   }
 
   const nextLevelId = getNextLevelId(level.id);
@@ -92,11 +119,17 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
         onEvent={handleEvent}
         paused={phase !== "playing"}
         restartSignal={restartSignal}
+        reviveSignal={reviveSignal}
+        respawnSignal={respawnSignal}
+        onDeathPrompt={(info) => {
+          setAdFailed(false);
+          setDeathPrompt({ cause: info.cause });
+        }}
       />
-      {phase === "playing" && (
+      {phase === "playing" && !deathPrompt && (
         <HUD level={level} shardsCollected={shardsCollected} elapsed={elapsed} deaths={deaths} onPause={() => setPhase("paused")} />
       )}
-      {toast && phase === "playing" && (
+      {toast && phase === "playing" && !deathPrompt && (
         <div
           data-testid={toast === "Gate opened!" ? "gate-toast" : "checkpoint-toast"}
           className="pointer-events-none absolute top-20 inset-x-0 z-20 flex justify-center"
@@ -106,6 +139,15 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
             {toast}
           </div>
         </div>
+      )}
+      {phase === "playing" && deathPrompt && (
+        <DeathOverlay
+          cause={deathPrompt.cause}
+          busy={adBusy}
+          adFailed={adFailed}
+          onWatchAd={() => void handleWatchAd()}
+          onRespawn={handleDeathRespawn}
+        />
       )}
       {phase === "intro" && <LevelIntro level={level} onStart={() => setPhase("playing")} />}
       {phase === "paused" && (

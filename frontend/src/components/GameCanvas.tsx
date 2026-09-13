@@ -11,6 +11,12 @@ export interface GameCanvasHandle {
   restart: () => void;
 }
 
+export interface DeathInfo {
+  cause: string;
+  distance: number;
+  shards: number;
+}
+
 interface Props {
   level: LevelDef;
   onWin: (result: { timeMs: number; shardsCollected: number; shardsTotal: number; stars: 1 | 2 | 3 }) => void;
@@ -20,6 +26,12 @@ interface Props {
   restartSignal: number;
   singleLife?: boolean;
   onGameOver?: (info: { distance: number; shards: number }) => void;
+  // When set, deaths (except manual retry) do NOT auto-respawn — the parent shows
+  // a rewarded-ad continue prompt and drives the outcome via reviveSignal (watch
+  // ad -> revive in place, death undone) or respawnSignal (normal checkpoint respawn).
+  onDeathPrompt?: (info: DeathInfo) => void;
+  reviveSignal?: number;
+  respawnSignal?: number;
 }
 
 export default function GameCanvas({
@@ -31,6 +43,9 @@ export default function GameCanvas({
   restartSignal,
   singleLife,
   onGameOver,
+  onDeathPrompt,
+  reviveSignal = 0,
+  respawnSignal = 0,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<GameEngine | null>(null);
@@ -48,6 +63,11 @@ export default function GameCanvas({
       if (e.type === "death") {
         onDeathCount?.(eng.deaths);
         onEvent?.("death");
+        const cause: string = e.data?.cause ?? "unknown";
+        if (onDeathPrompt && cause !== "manual") {
+          onDeathPrompt({ cause, distance: Math.round(eng.player.x / TILE), shards: eng.shardsCollected.size });
+          return;
+        }
         if (singleLife) {
           onGameOver?.({ distance: Math.round(eng.player.x / TILE), shards: eng.shardsCollected.size });
           return;
@@ -95,6 +115,20 @@ export default function GameCanvas({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [restartSignal]);
+
+  useEffect(() => {
+    if (reviveSignal > 0 && engineRef.current) {
+      engineRef.current.revive();
+      // revive() undoes the death penalty — sync the HUD counter too.
+      onDeathCount?.(engineRef.current.deaths);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [reviveSignal]);
+
+  useEffect(() => {
+    if (respawnSignal > 0) engineRef.current?.respawn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [respawnSignal]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

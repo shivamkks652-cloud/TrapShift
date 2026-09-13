@@ -106,6 +106,10 @@ export class GameEngine {
   // Brief post-respawn grace so the player can't instantly re-die to a hazard sitting
   // right at the spawn/checkpoint. The fall/death boundary is never suppressed by this.
   respawnGrace = 0;
+  // Last solid ground the player stood on — used by revive() so a rewarded
+  // continue after falling into the void puts them back on safe footing.
+  lastGroundX = 0;
+  lastGroundY = 0;
   particles: Particle[] = [];
   cameraShake = 0;
   squash = 0; // -1..1 for squash/stretch visual, engine tracks landing impact
@@ -412,6 +416,10 @@ export class GameEngine {
           180,
         );
       }
+    }
+    if (this.player.onGround) {
+      this.lastGroundX = this.player.x;
+      this.lastGroundY = this.player.y;
     }
 
     // update dynamic hazards
@@ -1002,6 +1010,30 @@ export class GameEngine {
     // Reset crumbling platforms to solid so the player never respawns onto a slab
     // that is mid-collapse and dies again through no fault of their own (fair respawn).
     for (const e of this.level.explodingPlatforms ?? []) this.explosionState[e.id] = { exploded: false, timer: 0 };
+    this.status = "playing";
+  }
+
+  // Rewarded-ad continue: bring the player back exactly where they died (or at
+  // the last solid ground they stood on if they fell into the void), undo the
+  // death penalty, and grant a longer grace window than a normal respawn.
+  // World state (switches, gates, collected shards, crumbled platforms) is kept.
+  revive() {
+    if (this.status !== "dead") return;
+    this.deaths = Math.max(0, this.deaths - 1);
+    if (this.lastDeathCause === "fell") {
+      if (this.lastGroundY > 0) {
+        this.player.x = this.lastGroundX;
+        this.player.y = this.lastGroundY;
+      } else {
+        const spawn = this.activeCheckpoint ?? { x: this.level.playerStart.x, y: this.level.playerStart.y };
+        this.player.x = spawn.x * TILE;
+        this.player.y = spawn.y * TILE;
+      }
+    }
+    this.player.vx = 0;
+    this.player.vy = 0;
+    this.player.onGround = false;
+    this.respawnGrace = 1.2;
     this.status = "playing";
   }
 }

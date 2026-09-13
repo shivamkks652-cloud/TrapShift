@@ -1,8 +1,9 @@
 // Central AdMob boundary for TrapShift. Real ads run ONLY on the native Android
-// build; on web preview every call is a safe no-op (Capacitor.isNativePlatform
-// guard) so nothing crashes. Uses Google TEST ad units in dev and the real
-// production units in a production build. Reward is granted ONLY when the SDK
-// confirms the Rewarded event — never on show/dismiss/fail.
+// build; on web preview every call is a safe simulation (Capacitor.isNativePlatform
+// guard) so the full death -> rewarded-continue flow stays testable in a browser.
+// Uses Google TEST ad units in dev and the real production units in a production
+// build. Reward is granted ONLY when the SDK confirms the Rewarded event — never
+// on show/dismiss/fail.
 import { Capacitor } from "@capacitor/core";
 
 const isProd = import.meta.env.PROD;
@@ -10,7 +11,7 @@ const isProd = import.meta.env.PROD;
 // Production AdMob IDs (publisher 3735972538807236). App ID goes in
 // android/app/src/main/AndroidManifest.xml as com.google.android.gms.ads.APPLICATION_ID.
 export const AdConfig = {
-  appId: "ca-app-pub-3735972538807236~XXXXXXXXXX", // TODO: paste real App ID (from AdMob → App settings)
+  appId: "ca-app-pub-3735972538807236~2413074131",
   rewardedAdId: isProd
     ? "ca-app-pub-3735972538807236/2262699194"
     : "ca-app-pub-3940256099942544/5224354917", // Google TEST rewarded
@@ -71,11 +72,18 @@ export async function hideMenuBanner(): Promise<void> {
 }
 
 // Resolves true ONLY after the SDK confirms the reward. Fail/dismiss/unavailable
-// -> false (caller then respawns normally). One-at-a-time via rewardInFlight.
+// -> false (caller then offers a normal respawn). One-at-a-time via rewardInFlight.
+// On web preview this simulates a successfully watched ad after a short delay so
+// the entire UI flow can be tested without a native build.
 export async function showRewardedContinue(): Promise<boolean> {
-  if (!usable() || rewardInFlight) return false;
+  if (rewardInFlight) return false;
   rewardInFlight = true;
   try {
+    if (!native) {
+      await new Promise((r) => setTimeout(r, 1200));
+      return true;
+    }
+    if (!usable()) return false;
     const { AdMob, RewardAdPluginEvents } = await import("@capacitor-community/admob");
     return await new Promise<boolean>(async (resolve) => {
       let settled = false;
@@ -99,8 +107,9 @@ export async function showRewardedContinue(): Promise<boolean> {
 }
 
 // Reports whether a rewarded continue can be offered right now (drives the
-// "Watch Ad & Continue" button visibility).
+// "Watch Ad & Continue" button visibility). Always true on web (simulated).
 export async function isRewardedAdAvailable(): Promise<boolean> {
+  if (!native) return true;
   return usable();
 }
 
