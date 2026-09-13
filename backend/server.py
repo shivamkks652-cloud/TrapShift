@@ -1,4 +1,5 @@
 from fastapi import FastAPI, APIRouter
+from fastapi.responses import PlainTextResponse
 from dotenv import load_dotenv
 from starlette.middleware.cors import CORSMiddleware
 from motor.motor_asyncio import AsyncIOMotorClient
@@ -43,6 +44,12 @@ async def root():
     return {"message": "Hello World"}
 
 @api_router.post("/status", response_model=StatusCheck)
+
+# Root-level endpoints for AdMob / search verification
+@app.get("/app-ads.txt", response_class=PlainTextResponse)
+async def app_ads_txt():
+    return "google.com, pub-3735972538807236, DIRECT, f08c47fec0942fa0\n"
+
 async def create_status_check(input: StatusCheckCreate):
     status_dict = input.model_dump()
     status_obj = StatusCheck(**status_dict)
