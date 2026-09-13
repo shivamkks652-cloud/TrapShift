@@ -241,3 +241,10 @@ User choices (ask_human, Hinglish): har death pe prompt; "Watch Ad & Continue" =
 - ads.ts: real App ID set; web simulation — showRewardedContinue() resolves true after 1.2s on non-native so full flow is testable in browser; isRewardedAdAvailable() true on web.
 - BUILD.md §5 rewritten: real ad units + manifest App ID meta-data snippet (dev=TEST units via import.meta.env.PROD).
 Verified: tsc clean; headless bot `node tools_test/run.mjs tools_test/all_test.ts` = 129/129 PASS (43 levels solvable, engine regression clean); live E2E web — story: death overlay on fall, ad-continue revives, respawn path works; endless: overlay → End Run → Run Over (NEW BEST), retry → second death → ad continue resumes run; zero console errors.
+
+## AdMob app-ads.txt Hosting (2026-09-13) — DONE (web side), push pending (GitHub)
+User spec: file named exactly app-ads.txt, content exactly `google.com, pub-3735972538807236, DIRECT, f08c47fec0942fa0`, served from website ROOT (/app-ads.txt), plain text, no HTML, no login, HTTPS, no redirects. No game/AdMob ID changes.
+- Created: frontend/public/app-ads.txt (Vite serves public/ at root → /app-ads.txt on Emergent web deploys), docs/app-ads.txt (monorepo /docs for GitHub Pages Trapshift1 branch), frontend/docs/app-ads.txt (repo-root /docs variant).
+- Verified LIVE: https://trapshift-deathfix.preview.emergentagent.com/app-ads.txt → HTTP 200, content-type text/plain, zero redirects, exact byte-match content, publicly accessible (no auth).
+- USER ACTION (GitHub Pages): Save to Github → Pages source = branch Trapshift1, folder /docs → file live at https://shivamkks652-cloud.github.io/TrapShift/app-ads.txt
+- IMPORTANT CAVEAT (AdMob crawler rule): AdMob checks the DOMAIN ROOT — for developer website shivamkks652-cloud.github.io it fetches https://shivamkks652-cloud.github.io/app-ads.txt (NOT the /TrapShift/ subpath). User must also create repo `shivamkks652-cloud/shivamkks652-cloud.github.io` with app-ads.txt at its root (same one-line content), enable Pages on it. Then AdMob → Apps → app-ads.txt → "Check for updates".
