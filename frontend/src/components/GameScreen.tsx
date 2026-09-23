@@ -22,6 +22,7 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
   const [elapsed, setElapsed] = useState(0);
   const [shardsCollected, setShardsCollected] = useState(0);
   const [deaths, setDeaths] = useState(0);
+  const [boost, setBoost] = useState<{ charges: number; max: number }>({ charges: 0, max: 0 });
   const [restartSignal, setRestartSignal] = useState(0);
   const [reviveSignal, setReviveSignal] = useState(0);
   const [respawnSignal, setRespawnSignal] = useState(0);
@@ -121,13 +122,14 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
         restartSignal={restartSignal}
         reviveSignal={reviveSignal}
         respawnSignal={respawnSignal}
+        onBoost={(charges, max) => setBoost({ charges, max })}
         onDeathPrompt={(info) => {
           setAdFailed(false);
           setDeathPrompt({ cause: info.cause });
         }}
       />
       {phase === "playing" && !deathPrompt && (
-        <HUD level={level} shardsCollected={shardsCollected} elapsed={elapsed} deaths={deaths} onPause={() => setPhase("paused")} />
+        <HUD level={level} shardsCollected={shardsCollected} elapsed={elapsed} deaths={deaths} boostCharges={boost.charges} boostMax={boost.max} onPause={() => setPhase("paused")} />
       )}
       {toast && phase === "playing" && !deathPrompt && (
         <div

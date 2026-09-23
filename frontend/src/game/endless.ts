@@ -28,6 +28,7 @@ function buildSegment(rand: () => number, index: number): { rows: string[][]; le
     const gapStart = 4 + Math.floor(rand() * 4);
     const gapLen = 2 + Math.floor(rand() * 2);
     for (let x = gapStart; x < gapStart + gapLen && x < SEGMENT_WIDTH; x++) rows[ROWS - 1][x] = ".";
+    (extra as any)._gap = true;
   } else if (kind === "laser") {
     // handled via extra.laserGates by caller with offset
     (extra as any)._laserAt = 6 + Math.floor(rand() * 4);
@@ -51,6 +52,7 @@ export function generateEndlessLevel(seed: number, segmentCount = 40): LevelDef 
   const gravityZones: any[] = [];
   const explodingPlatforms: any[] = [];
   const shards: any[] = [];
+  const jumpCubes: any[] = [];
 
   for (let i = 0; i < segmentCount; i++) {
     const { rows: segRows, level } = buildSegment(rand, i);
@@ -86,6 +88,10 @@ export function generateEndlessLevel(seed: number, segmentCount = 40): LevelDef 
     if (anyLevel._gravityAt !== undefined) {
       gravityZones.push({ x: offset + anyLevel._gravityAt, y: 0, w: 4, h: ROWS });
     }
+    // Occasionally drop a jump-boost cube just before a gap segment so it feels rewarding.
+    if (anyLevel._gap && rand() > 0.4) {
+      jumpCubes.push({ id: `cube-${i}`, x: offset + 2, y: ROWS - 2, charges: 3 });
+    }
     if (anyLevel._explodeAt !== undefined) {
       explodingPlatforms.push({
         id: `exp-${i}`,
@@ -118,6 +124,7 @@ export function generateEndlessLevel(seed: number, segmentCount = 40): LevelDef 
     gravityZones,
     explodingPlatforms,
     shards,
+    jumpCubes,
     parTime: 999,
   };
 }

@@ -27,6 +27,7 @@ export const world1: LevelDef[] = [
     playerStart: { x: 2, y: 5 },
     exit: { x: 28, y: 5 },
     shards: [{ id: "s1", x: 5, y: 5 }, { id: "s2", x: 15, y: 5 }],
+    jumpCubes: [{ id: "c1", x: 6, y: 5, charges: 2 }],
     parTime: 12,
   },
 

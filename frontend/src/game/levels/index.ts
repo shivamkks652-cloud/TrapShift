@@ -29,6 +29,7 @@ function withRunway(level: LevelDef, pad: number): LevelDef {
     exit: { ...level.exit, x: level.exit.x + pad },
     checkpoints: map(level.checkpoints),
     shards: map(level.shards),
+    jumpCubes: map(level.jumpCubes),
     movingWalls: map(level.movingWalls),
     gravityZones: map(level.gravityZones),
     reverseZones: map(level.reverseZones),

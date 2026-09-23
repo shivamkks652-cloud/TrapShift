@@ -352,22 +352,98 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
     ctx.restore();
   }
 
-  // mimic enemies
+  // jump-boost cubes (glowing green energy cube with an up chevron)
+  for (const c of engine.level.jumpCubes ?? []) {
+    if (engine.collectedCubeIds.includes(c.id)) continue;
+    const cx = c.x * TILE + TILE / 2;
+    const cy = c.y * TILE + TILE / 2 + Math.sin(frame / 16 + c.x) * 4;
+    const pulse = 0.7 + Math.sin(frame / 10) * 0.3;
+    const s = TILE * 0.32;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.sin(frame / 40) * 0.15);
+    ctx.shadowColor = "#39ffb0";
+    ctx.shadowBlur = 18 * pulse;
+    ctx.fillStyle = "rgba(57,255,176,0.18)";
+    ctx.strokeStyle = "#39ffb0";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.rect(-s, -s, s * 2, s * 2);
+    ctx.fill();
+    ctx.stroke();
+    // up chevron
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = "#eafff6";
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(-s * 0.5, s * 0.25);
+    ctx.lineTo(0, -s * 0.35);
+    ctx.lineTo(s * 0.5, s * 0.25);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // active jump-boost aura behind the player
+  if (engine.jumpBoostCharges > 0) {
+    const ax = engine.player.x + engine.player.w / 2;
+    const ay = engine.player.y + engine.player.h / 2;
+    const ring = 0.6 + Math.sin(frame / 8) * 0.2;
+    ctx.save();
+    ctx.globalAlpha = 0.5 * ring;
+    ctx.strokeStyle = "#39ffb0";
+    ctx.shadowColor = "#39ffb0";
+    ctx.shadowBlur = 20;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(ax, ay, TILE * 0.5 + ring * 4, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  // mimic enemies — menacing energy predator (dark core, glowing danger aura, eyes)
   for (const m of engine.level.mimicEnemies ?? []) {
     const st = engine.mimicState[m.id];
-    const x = st.x;
-    const y = st.y;
-    const pulse = st.woken ? 1 : 0.6 + Math.sin(frame / 12) * 0.15;
-    ctx.fillStyle = st.woken ? dangerColor : "#5b3d7a";
-    ctx.shadowColor = st.woken ? dangerColor : "#5b3d7a";
-    ctx.shadowBlur = st.woken ? 20 : 6 * pulse;
-    ctx.fillRect(x, y, TILE * 0.7, TILE * 0.7);
-    ctx.shadowBlur = 0;
-    if (st.woken) {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(x + TILE * 0.15, y + TILE * 0.2, 5, 5);
-      ctx.fillRect(x + TILE * 0.45, y + TILE * 0.2, 5, 5);
+    const size = TILE * 0.72;
+    const cx = st.x + size / 2;
+    const cy = st.y + size / 2;
+    const woken = st.woken;
+    const aura = woken ? "#ff3d5c" : "#8a3dff";
+    const pulse = woken ? 0.85 + Math.sin(frame / 6) * 0.15 : 0.55 + Math.sin(frame / 14) * 0.12;
+    ctx.save();
+    ctx.translate(cx, cy);
+    ctx.rotate(Math.sin(frame / (woken ? 7 : 22)) * (woken ? 0.14 : 0.05));
+    // outer glow aura
+    ctx.shadowColor = aura;
+    ctx.shadowBlur = (woken ? 26 : 12) * pulse;
+    // jagged/rounded dark body
+    const h = size / 2;
+    ctx.fillStyle = woken ? "#2a0510" : "#1c0f2e";
+    ctx.strokeStyle = aura;
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    const spikes = 6;
+    for (let i = 0; i < spikes * 2; i++) {
+      const ang = (Math.PI / spikes) * i;
+      const rad = i % 2 === 0 ? h : h * 0.72;
+      const x = Math.cos(ang) * rad;
+      const y = Math.sin(ang) * rad;
+      if (i === 0) ctx.moveTo(x, y);
+      else ctx.lineTo(x, y);
     }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // glowing eyes
+    ctx.shadowBlur = 10;
+    ctx.shadowColor = aura;
+    ctx.fillStyle = woken ? "#ffd7de" : "#d9b3ff";
+    const eo = h * 0.28;
+    const er = woken ? 3.5 : 2.8;
+    ctx.beginPath();
+    ctx.arc(-eo, -eo * 0.2, er, 0, Math.PI * 2);
+    ctx.arc(eo, -eo * 0.2, er, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 
   // fake exits + real exit

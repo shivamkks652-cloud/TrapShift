@@ -1,4 +1,4 @@
-import { Pause, Zap } from "lucide-react";
+import { Pause, Zap, ChevronsUp } from "lucide-react";
 import type { LevelDef } from "@/game/types";
 
 interface Props {
@@ -6,6 +6,8 @@ interface Props {
   shardsCollected: number;
   elapsed: number;
   deaths: number;
+  boostCharges?: number;
+  boostMax?: number;
   onPause: () => void;
 }
 
@@ -15,7 +17,7 @@ function formatTime(seconds: number) {
   return `${m}:${s.padStart(5, "0")}`;
 }
 
-export default function HUD({ level, shardsCollected, elapsed, deaths, onPause }: Props) {
+export default function HUD({ level, shardsCollected, elapsed, deaths, boostCharges = 0, boostMax = 0, onPause }: Props) {
   const shardsTotal = level.shards?.length ?? 0;
   return (
     <div className="absolute top-0 inset-x-0 flex items-start justify-between p-4 pointer-events-none z-10">
@@ -35,6 +37,22 @@ export default function HUD({ level, shardsCollected, elapsed, deaths, onPause }
           </>
         )}
       </div>
+      {boostCharges > 0 && (
+        <div
+          data-testid="hud-boost-indicator"
+          className="flex items-center gap-1.5 bg-emerald-400/15 backdrop-blur-md rounded-2xl px-3 py-2 border border-emerald-300/40 shadow-[0_0_20px_rgba(57,255,176,0.35)] animate-pulse"
+        >
+          <ChevronsUp size={15} className="text-emerald-300" />
+          <div className="flex items-center gap-1">
+            {Array.from({ length: boostMax }).map((_, i) => (
+              <span
+                key={i}
+                className={`w-2 h-2 rounded-full ${i < boostCharges ? "bg-emerald-300 shadow-[0_0_8px_rgba(57,255,176,0.9)]" : "bg-white/20"}`}
+              />
+            ))}
+          </div>
+        </div>
+      )}
       <button
         onClick={onPause}
         data-testid="hud-pause-btn"

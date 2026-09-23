@@ -177,6 +177,16 @@ export interface Shard {
   y: number;
 }
 
+// Jump-boost pickup cube. Collecting it grants `charges` boosted jumps; each jump
+// spends one charge and the boost fades with each remaining charge (first jump
+// highest, last jump smallest) until it returns to a normal jump.
+export interface JumpCube {
+  id: string;
+  x: number;
+  y: number;
+  charges?: number; // default 3
+}
+
 export interface Exit {
   x: number;
   y: number;
@@ -199,6 +209,7 @@ export interface LevelDef {
   exit: Exit;
   checkpoints?: Checkpoint[];
   shards?: Shard[];
+  jumpCubes?: JumpCube[];
   movingWalls?: MovingWall[];
   gravityZones?: GravityZone[];
   reverseZones?: ReverseZone[];

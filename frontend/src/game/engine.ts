@@ -110,6 +110,11 @@ export class GameEngine {
   // continue after falling into the void puts them back on safe footing.
   lastGroundX = 0;
   lastGroundY = 0;
+  // Jump-boost cube state (temporary power). charges = boosted jumps remaining;
+  // boost strength scales with charges/max so the first jump is strongest.
+  jumpBoostCharges = 0;
+  jumpBoostMax = 0;
+  collectedCubeIds: string[] = [];
   particles: Particle[] = [];
   cameraShake = 0;
   squash = 0; // -1..1 for squash/stretch visual, engine tracks landing impact
@@ -376,7 +381,24 @@ export class GameEngine {
     else this.coyoteTimer = Math.max(0, this.coyoteTimer - dt);
 
     if (this.jumpBufferTimer > 0 && this.coyoteTimer > 0) {
-      this.player.vy = -JUMP_VELOCITY * this.gravityDir;
+      let jumpVel = JUMP_VELOCITY;
+      if (this.jumpBoostCharges > 0 && this.jumpBoostMax > 0) {
+        // Boost scales with remaining charges: first jump ~+55%, fading each gap.
+        const ratio = this.jumpBoostCharges / this.jumpBoostMax;
+        jumpVel = JUMP_VELOCITY * (1 + 0.55 * ratio);
+        this.jumpBoostCharges--;
+        sfx.doubleTap();
+        this.spawnParticles(
+          this.player.x + this.player.w / 2,
+          this.player.y + (this.gravityDir === 1 ? this.player.h : 0),
+          10,
+          "#39ffb0",
+          260,
+          Math.PI,
+        );
+        this.emit("boostUse", { charges: this.jumpBoostCharges, max: this.jumpBoostMax });
+      }
+      this.player.vy = -jumpVel * this.gravityDir;
       this.jumpBufferTimer = 0;
       this.coyoteTimer = 0;
       this.player.onGround = false;
@@ -442,6 +464,9 @@ export class GameEngine {
     // shards
     this.checkShards();
 
+    // jump-boost cubes
+    this.checkJumpCubes();
+
     // portals
     this.checkPortals();
 
@@ -459,8 +484,10 @@ export class GameEngine {
 
     // fell off level — with the grid now open below the tiles (see tileAt),
     // any fall through a pit or tunnelled tile keeps going until it crosses this
-    // boundary and reliably triggers death + respawn on every level.
-    if (this.player.y > this.rows().length * TILE + TILE * 2 || this.player.y < -TILE * 6) {
+    // boundary and reliably triggers death + respawn on every level. Kept tight
+    // (just below the floor) so a pit-fall kills almost immediately instead of a
+    // long, "stuck in mid-air" plummet through the empty space under the level.
+    if (this.player.y > this.rows().length * TILE + TILE * 0.5 || this.player.y < -TILE * 6) {
       this.die("fell");
     }
 
@@ -881,8 +908,15 @@ export class GameEngine {
   }
 
   private checkMimics(dt: number) {
+    const playerRect = () => ({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h });
     for (const m of this.level.mimicEnemies ?? []) {
       const st = this.mimicState[m.id];
+      const size = TILE * 0.72;
+      // Instant death on ANY contact (dormant or woken) — touching the enemy kills.
+      if (rectsOverlap(playerRect(), { x: st.x, y: st.y, w: size, h: size })) {
+        this.die("mimic");
+        return;
+      }
       const dx = this.player.x - st.x;
       const dy = this.player.y - st.y;
       const dist = Math.sqrt(dx * dx + dy * dy) / TILE;
@@ -892,13 +926,37 @@ export class GameEngine {
         this.emit("mimicWake");
       }
       if (st.woken) {
-        const dir = Math.sign(dx);
+        const dir = Math.sign(dx) || 1;
         st.vx = dir * m.lungeSpeed;
-        st.x += st.vx * dt;
-        const rect = { x: st.x, y: st.y, w: TILE * 0.7, h: TILE * 0.7 };
-        if (rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) {
-          this.die("mimic");
+        // Swept move: advance in sub-steps of <=0.4 tile so a fast lunge can never
+        // tunnel straight past the player without registering a lethal contact.
+        let remaining = Math.abs(st.vx * dt);
+        const stepMax = TILE * 0.4;
+        while (remaining > 0) {
+          const step = Math.min(stepMax, remaining);
+          st.x += step * dir;
+          remaining -= step;
+          if (rectsOverlap(playerRect(), { x: st.x, y: st.y, w: size, h: size })) {
+            this.die("mimic");
+            return;
+          }
         }
+      }
+    }
+  }
+
+  private checkJumpCubes() {
+    for (const c of this.level.jumpCubes ?? []) {
+      if (this.collectedCubeIds.includes(c.id)) continue;
+      const rect = tileRect(c.x, c.y);
+      if (rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) {
+        this.collectedCubeIds.push(c.id);
+        const charges = c.charges ?? 3;
+        this.jumpBoostCharges = charges;
+        this.jumpBoostMax = charges;
+        sfx.checkpoint();
+        this.spawnParticles(c.x * TILE + TILE / 2, c.y * TILE + TILE / 2, 14, "#39ffb0", 260);
+        this.emit("boostPickup", { charges, max: charges });
       }
     }
   }
@@ -1010,6 +1068,9 @@ export class GameEngine {
     // Reset crumbling platforms to solid so the player never respawns onto a slab
     // that is mid-collapse and dies again through no fault of their own (fair respawn).
     for (const e of this.level.explodingPlatforms ?? []) this.explosionState[e.id] = { exploded: false, timer: 0 };
+    this.jumpBoostCharges = 0;
+    this.jumpBoostMax = 0;
+    this.emit("boostUse", { charges: 0, max: 0 });
     this.status = "playing";
   }
 
@@ -1034,6 +1095,9 @@ export class GameEngine {
     this.player.vy = 0;
     this.player.onGround = false;
     this.respawnGrace = 1.2;
+    this.jumpBoostCharges = 0;
+    this.jumpBoostMax = 0;
+    this.emit("boostUse", { charges: 0, max: 0 });
     this.status = "playing";
   }
 }

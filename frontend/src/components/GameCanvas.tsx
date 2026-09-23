@@ -6,6 +6,7 @@ import { getWorldOfLevel } from "@/game/levels";
 import { RESTART_DELAY_MS } from "@/game/constants";
 import { loadSave, recordLevelResult, getSettings } from "@/game/storage";
 import { resumeAudio, stopAllHums } from "@/game/audio";
+import { vibrate } from "@/game/haptics";
 
 export interface GameCanvasHandle {
   restart: () => void;
@@ -32,6 +33,7 @@ interface Props {
   onDeathPrompt?: (info: DeathInfo) => void;
   reviveSignal?: number;
   respawnSignal?: number;
+  onBoost?: (charges: number, max: number) => void;
 }
 
 export default function GameCanvas({
@@ -46,6 +48,7 @@ export default function GameCanvas({
   onDeathPrompt,
   reviveSignal = 0,
   respawnSignal = 0,
+  onBoost,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const engineRef = useRef<GameEngine | null>(null);
@@ -85,6 +88,9 @@ export default function GameCanvas({
         recordLevelResult(level.id, Math.round(eng.time * 1000), shardsCollected, shardsTotal, stars);
         onWin({ timeMs: Math.round(eng.time * 1000), shardsCollected, shardsTotal, stars });
         onEvent?.("win");
+      } else if (e.type === "boostPickup" || e.type === "boostUse") {
+        onBoost?.(e.data?.charges ?? 0, e.data?.max ?? 0);
+        onEvent?.(e.type);
       } else {
         onEvent?.(e.type);
       }
@@ -226,19 +232,21 @@ export default function GameCanvas({
     <div className="relative w-full h-full select-none touch-none">
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
       <div
-        className="absolute inset-x-0 bottom-0 flex items-end justify-between px-5 pb-6 pointer-events-none"
+        className="absolute inset-x-0 bottom-0 flex items-end justify-between px-[max(1.25rem,env(safe-area-inset-left))] pb-[max(1.5rem,env(safe-area-inset-bottom))] pointer-events-none"
         style={{ opacity: getSettings().touchOpacity }}
       >
         <div
-          className="flex gap-3 pointer-events-auto"
+          className="flex gap-4 pointer-events-auto"
           style={{ transform: `scale(${getSettings().touchScale})`, transformOrigin: "bottom left" }}
         >
           <TouchButton
+            testid="touch-left-btn"
             label="◀"
             onDown={() => setTouch("left", true)}
             onUp={() => setTouch("left", false)}
           />
           <TouchButton
+            testid="touch-right-btn"
             label="▶"
             onDown={() => setTouch("right", true)}
             onUp={() => setTouch("right", false)}
@@ -248,7 +256,7 @@ export default function GameCanvas({
           className="pointer-events-auto"
           style={{ transform: `scale(${getSettings().touchScale})`, transformOrigin: "bottom right" }}
         >
-          <TouchButton label="⤒" big onDown={pressJump} onUp={releaseJump} />
+          <TouchButton testid="touch-jump-btn" label="⤒" big onDown={pressJump} onUp={releaseJump} />
         </div>
       </div>
     </div>
@@ -260,27 +268,61 @@ function TouchButton({
   onDown,
   onUp,
   big,
+  testid,
 }: {
   label: string;
   onDown: () => void;
   onUp: () => void;
   big?: boolean;
+  testid: string;
 }) {
+  const accent = big ? "#39ffb0" : "#4bf3ff";
   return (
     <button
-      className={`${big ? "w-20 h-20 text-3xl" : "w-16 h-16 text-2xl"} rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white flex items-center justify-center active:scale-90 active:bg-white/20 transition-transform`}
+      data-testid={testid}
+      // Responsive size that scales with the smaller screen edge so it feels right
+      // on tall Redmi/Poco phones and small devices alike, with a sane min/max.
+      className={`relative rounded-full flex items-center justify-center font-bold text-white/95
+        active:scale-90 transition-transform duration-100 will-change-transform
+        bg-white/[0.07] backdrop-blur-xl border border-white/25
+        ${big
+          ? "w-[clamp(72px,20vw,104px)] h-[clamp(72px,20vw,104px)] text-3xl"
+          : "w-[clamp(60px,16vw,88px)] h-[clamp(60px,16vw,88px)] text-2xl"}`}
+      style={{
+        // Critical for reliable MULTI-TOUCH: disable the browser's default touch
+        // gestures on the button itself so a second finger (e.g. jump while holding
+        // left) never triggers a gesture that cancels the first finger's press.
+        touchAction: "none",
+        boxShadow: `0 0 0 1px rgba(255,255,255,0.06), 0 8px 24px rgba(0,0,0,0.45), inset 0 0 18px ${accent}22, 0 0 22px ${accent}33`,
+      }}
       onPointerDown={(e) => {
         e.preventDefault();
+        // Keep receiving pointer events for THIS finger even if it slides off, so
+        // multi-touch holds don't false-release when fingers drift.
+        try {
+          (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
+        } catch { /* ignore */ }
+        vibrate(big ? 22 : 14);
         onDown();
       }}
       onPointerUp={(e) => {
         e.preventDefault();
+        try {
+          (e.currentTarget as HTMLElement).releasePointerCapture(e.pointerId);
+        } catch { /* ignore */ }
         onUp();
       }}
-      onPointerLeave={() => onUp()}
+      onPointerCancel={() => onUp()}
+      onLostPointerCapture={() => onUp()}
       onContextMenu={(e) => e.preventDefault()}
     >
-      {label}
+      <span
+        className="absolute inset-1 rounded-full pointer-events-none"
+        style={{ boxShadow: `inset 0 0 12px ${accent}55`, border: `1px solid ${accent}44` }}
+      />
+      <span className="relative drop-shadow-[0_1px_2px_rgba(0,0,0,0.6)]" style={{ color: accent }}>
+        {label}
+      </span>
     </button>
   );
 }
