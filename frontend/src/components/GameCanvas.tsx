@@ -33,6 +33,7 @@ interface Props {
   onDeathPrompt?: (info: DeathInfo) => void;
   reviveSignal?: number;
   respawnSignal?: number;
+  boostSignal?: number;
   onBoost?: (charges: number, max: number) => void;
 }
 
@@ -48,6 +49,7 @@ export default function GameCanvas({
   onDeathPrompt,
   reviveSignal = 0,
   respawnSignal = 0,
+  boostSignal = 0,
   onBoost,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -135,6 +137,11 @@ export default function GameCanvas({
     if (respawnSignal > 0) engineRef.current?.respawn();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [respawnSignal]);
+
+  useEffect(() => {
+    if (boostSignal > 0) engineRef.current?.grantBoost(3);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [boostSignal]);
 
   useEffect(() => {
     const canvas = canvasRef.current;

@@ -238,6 +238,14 @@ User approved 3 backlog enhancements (ask_human: flying drone enemy; cubes on 1-
 3. BOOST JUICE: sfx.boostJump (rising 520→1240Hz sweep + sparkle) on boosted jump, sfx.boostPickup (3-note ascending chime) on pickup; engine spawns a fading green particle trail (every 0.05s) while airborne with charges.
 4. Endless generator: new "drone" segment kind (drone patrolling 5 tiles at ROWS-3).
 Verified: tsc clean; all_test.ts 129/129 (43 levels solvable WITH drones placed); NEW tools_test/drone_cube_test.ts 17/17 PASS (all 14 drone levels kill instantly on contact; cube pickup sets charges; boosted jump vel 1172 vs normal 780 (+50%) and depletes; boost clears on respawn); live w1-3 shows the red glowing drone in-world.
+
+## Rewarded-Ad Free Boost on Level Intro (2026-09-23) — DONE
+User approved: watch ad → free boost cube for the level.
+- LevelIntro.tsx: new "Watch Ad · Free Boost ×3" button (data-testid=intro-boost-ad-btn, green neon) under the level rule; busy state "Loading Ad…", failure note (intro-boost-ad-error), success badge "Boost ready — 3 powered jumps!" (intro-boost-granted). Offered once per level intro (resets on level change).
+- GameScreen.handleBoostAd → showRewardedContinue() (real ad on Android, simulated on web) → on reward: boostSignal++ → GameCanvas effect → engine.grantBoost(3).
+- engine.grantBoost(): sets charges/max=3, boostPickup sfx + particles, emits boostUse so the HUD pill lights up immediately at spawn.
+- Consistent with boost rules: charges deplete per jump (strongest first) and clear on death/respawn.
+Verified: tsc clean; live E2E on w1-1 — intro button → (simulated ad) → granted badge → Start → HUD boost indicator with 3 dots + player aura in-game. Zero console errors.
 USER ACTION: Save to Github (pushes docs/ to Trapshift1) -> Settings -> Pages -> branch Trapshift1, folder /docs -> Save.
 
 ## AdMob Integration Backbone + Stronger Audio (2026-06-13) — PARTIAL/READY

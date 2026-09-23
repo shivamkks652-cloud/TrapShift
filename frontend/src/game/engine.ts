@@ -1114,6 +1114,15 @@ export class GameEngine {
     this.status = "playing";
   }
 
+  // Grant a free jump-boost (e.g. from a rewarded ad on the level intro screen).
+  grantBoost(charges = 3) {
+    this.jumpBoostCharges = charges;
+    this.jumpBoostMax = charges;
+    sfx.boostPickup();
+    this.spawnParticles(this.player.x + this.player.w / 2, this.player.y, 14, "#39ffb0", 260);
+    this.emit("boostUse", { charges, max: charges });
+  }
+
   // Rewarded-ad continue: bring the player back exactly where they died (or at
   // the last solid ground they stood on if they fell into the void), undo the
   // death penalty, and grant a longer grace window than a normal respawn.

@@ -29,6 +29,10 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
   const [deathPrompt, setDeathPrompt] = useState<{ cause: string } | null>(null);
   const [adBusy, setAdBusy] = useState(false);
   const [adFailed, setAdFailed] = useState(false);
+  const [boostAdBusy, setBoostAdBusy] = useState(false);
+  const [boostAdFailed, setBoostAdFailed] = useState(false);
+  const [boostGranted, setBoostGranted] = useState(false);
+  const [boostSignal, setBoostSignal] = useState(0);
   const [result, setResult] = useState<{ timeMs: number; shardsCollected: number; shardsTotal: number; stars: 1 | 2 | 3 } | null>(null);
   const [muted, setMutedState] = useState(isMuted());
   const [toast, setToast] = useState<string | null>(null);
@@ -44,6 +48,8 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
     const s = getSettings();
     setMusicVolume(s.musicVolume);
     setSfxVolume(s.sfxVolume);
+    setBoostGranted(false);
+    setBoostAdFailed(false);
     startMusic(level.world, Number(level.id.split("-")[1]) || 0);
     return () => {
       stopMusic();
@@ -108,6 +114,19 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
     setRespawnSignal((s) => s + 1);
   }
 
+  async function handleBoostAd() {
+    setBoostAdBusy(true);
+    setBoostAdFailed(false);
+    const ok = await showRewardedContinue();
+    setBoostAdBusy(false);
+    if (ok) {
+      setBoostGranted(true);
+      setBoostSignal((s) => s + 1);
+    } else {
+      setBoostAdFailed(true);
+    }
+  }
+
   const nextLevelId = getNextLevelId(level.id);
   const nextLevel = nextLevelId ? getLevelById(nextLevelId) : undefined;
 
@@ -122,6 +141,7 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
         restartSignal={restartSignal}
         reviveSignal={reviveSignal}
         respawnSignal={respawnSignal}
+        boostSignal={boostSignal}
         onBoost={(charges, max) => setBoost({ charges, max })}
         onDeathPrompt={(info) => {
           setAdFailed(false);
@@ -151,7 +171,16 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
           onRespawn={handleDeathRespawn}
         />
       )}
-      {phase === "intro" && <LevelIntro level={level} onStart={() => setPhase("playing")} />}
+      {phase === "intro" && (
+        <LevelIntro
+          level={level}
+          onStart={() => setPhase("playing")}
+          onBoostAd={() => void handleBoostAd()}
+          boostBusy={boostAdBusy}
+          boostFailed={boostAdFailed}
+          boostGranted={boostGranted}
+        />
+      )}
       {phase === "paused" && (
         <PauseOverlay
           onResume={() => setPhase("playing")}
