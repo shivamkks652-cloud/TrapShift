@@ -48,6 +48,7 @@ function withRunway(level: LevelDef, pad: number): LevelDef {
     switches: map(level.switches),
     gates: map(level.gates),
     mimicEnemies: map(level.mimicEnemies),
+    patrolDrones: map(level.patrolDrones),
     steamVents: map(level.steamVents),
     firewallSweeps: level.firewallSweeps?.map((f) => ({ ...f, startX: f.startX + pad, endX: f.endX + pad })),
     chaosRifts: map(level.chaosRifts),
@@ -57,14 +58,78 @@ function withRunway(level: LevelDef, pad: number): LevelDef {
 
 const applyRunway = (levels: LevelDef[]) => levels.map((l) => withRunway(l, runwayFor(l.world)));
 
+// Find the first "tough" floor gap (>= minLen consecutive open tiles on the ground
+// row, starting after the safe runway) so power-ups / drones can be placed around it.
+function findFloorGap(level: LevelDef, minLen: number): { start: number; len: number } | null {
+  const groundRow = level.rows[level.rows.length - 1];
+  let start = -1;
+  for (let x = 0; x <= groundRow.length; x++) {
+    const open = x < groundRow.length && groundRow[x] !== "#";
+    if (open && start === -1) start = x;
+    if (!open && start !== -1) {
+      const len = x - start;
+      if (len >= minLen && start >= 2) return { start, len };
+      start = -1;
+    }
+  }
+  return null;
+}
+
+// Strategic jump-cube placement: up to 2 levels per world that have a big floor gap
+// (and no cube yet) get a boost cube on the floor right before the gap.
+function addStrategicCubes(levels: LevelDef[]): LevelDef[] {
+  let placed = 0;
+  const groundRowI = levels[0]?.rows.length ? levels[0].rows.length - 1 : 0;
+  return levels.map((l) => {
+    if (placed >= 2 || (l.jumpCubes?.length ?? 0) > 0) return l;
+    const gap = findFloorGap(l, 3);
+    if (!gap || gap.start < 3) return l;
+    placed++;
+    return {
+      ...l,
+      jumpCubes: [{ id: `${l.id}-cube`, x: gap.start - 2, y: groundRowI - 1, charges: gap.len >= 4 ? 3 : 2 }],
+    };
+  });
+}
+
+// Flying drones: the first levels per world with a solid gap get a drone patrolling
+// above it at jump height — a timing threat while crossing. The tutorial level
+// (w1-1) is skipped, and patrol range is capped so a long open stretch (e.g. dark
+// bridge levels) doesn't turn into a whole-level sweeper.
+function addStrategicDrones(levels: LevelDef[]): LevelDef[] {
+  let placed = 0;
+  const groundRowI = levels[0]?.rows.length ? levels[0].rows.length - 1 : 0;
+  return levels.map((l) => {
+    if (placed >= 2 || l.id === "w1-1" || (l.patrolDrones?.length ?? 0) > 0) return l;
+    const gap = findFloorGap(l, 2);
+    if (!gap || gap.start < 3) return l;
+    placed++;
+    return {
+      ...l,
+      patrolDrones: [
+        {
+          id: `${l.id}-drone`,
+          x: gap.start - 1,
+          y: groundRowI - 3,
+          range: Math.min(6, Math.max(2, gap.len + 2)),
+          speed: 1.4,
+          phase: 0.25,
+        },
+      ],
+    };
+  });
+}
+
+const enhance = (levels: LevelDef[]) => addStrategicDrones(addStrategicCubes(applyRunway(levels)));
+
 export const WORLDS: WorldDef[] = [
-  { id: 1, name: WORLD_THEME[0].name, colorFrom: WORLD_THEME[0].from, colorTo: WORLD_THEME[0].to, accent: WORLD_THEME[0].accent, levels: applyRunway(world1) },
-  { id: 2, name: WORLD_THEME[1].name, colorFrom: WORLD_THEME[1].from, colorTo: WORLD_THEME[1].to, accent: WORLD_THEME[1].accent, levels: applyRunway(world2) },
-  { id: 3, name: WORLD_THEME[2].name, colorFrom: WORLD_THEME[2].from, colorTo: WORLD_THEME[2].to, accent: WORLD_THEME[2].accent, levels: applyRunway(world3) },
-  { id: 4, name: WORLD_THEME[3].name, colorFrom: WORLD_THEME[3].from, colorTo: WORLD_THEME[3].to, accent: WORLD_THEME[3].accent, levels: applyRunway(world4) },
-  { id: 5, name: WORLD_THEME[4].name, colorFrom: WORLD_THEME[4].from, colorTo: WORLD_THEME[4].to, accent: WORLD_THEME[4].accent, levels: applyRunway(world5) },
-  { id: 6, name: WORLD_THEME[5].name, colorFrom: WORLD_THEME[5].from, colorTo: WORLD_THEME[5].to, accent: WORLD_THEME[5].accent, levels: applyRunway(world6) },
-  { id: 7, name: WORLD_THEME[6].name, colorFrom: WORLD_THEME[6].from, colorTo: WORLD_THEME[6].to, accent: WORLD_THEME[6].accent, levels: applyRunway(world7) },
+  { id: 1, name: WORLD_THEME[0].name, colorFrom: WORLD_THEME[0].from, colorTo: WORLD_THEME[0].to, accent: WORLD_THEME[0].accent, levels: enhance(world1) },
+  { id: 2, name: WORLD_THEME[1].name, colorFrom: WORLD_THEME[1].from, colorTo: WORLD_THEME[1].to, accent: WORLD_THEME[1].accent, levels: enhance(world2) },
+  { id: 3, name: WORLD_THEME[2].name, colorFrom: WORLD_THEME[2].from, colorTo: WORLD_THEME[2].to, accent: WORLD_THEME[2].accent, levels: enhance(world3) },
+  { id: 4, name: WORLD_THEME[3].name, colorFrom: WORLD_THEME[3].from, colorTo: WORLD_THEME[3].to, accent: WORLD_THEME[3].accent, levels: enhance(world4) },
+  { id: 5, name: WORLD_THEME[4].name, colorFrom: WORLD_THEME[4].from, colorTo: WORLD_THEME[4].to, accent: WORLD_THEME[4].accent, levels: enhance(world5) },
+  { id: 6, name: WORLD_THEME[5].name, colorFrom: WORLD_THEME[5].from, colorTo: WORLD_THEME[5].to, accent: WORLD_THEME[5].accent, levels: enhance(world6) },
+  { id: 7, name: WORLD_THEME[6].name, colorFrom: WORLD_THEME[6].from, colorTo: WORLD_THEME[6].to, accent: WORLD_THEME[6].accent, levels: enhance(world7) },
 ];
 
 export const ALL_LEVELS: LevelDef[] = WORLDS.flatMap((w) => w.levels);

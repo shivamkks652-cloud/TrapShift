@@ -446,7 +446,54 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
     ctx.restore();
   }
 
-  // fake exits + real exit
+  // flying patrol drones — hovering saucer with spinning rotor, danger glow
+  for (const d of engine.level.patrolDrones ?? []) {
+    const r = engine.droneRect(d);
+    const cx = r.x + r.w / 2;
+    const cy = r.y + r.h / 2;
+    const hover = Math.sin(frame / 9 + (d.phase ?? 0) * 10) * 2;
+    const pulse = 0.7 + Math.sin(frame / 8) * 0.3;
+    ctx.save();
+    ctx.translate(cx, cy + hover);
+    // faint patrol-path hint line
+    // spinning rotor blur
+    ctx.strokeStyle = "rgba(255,92,122,0.5)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    const rotorR = r.w * 0.85;
+    const rotorAng = frame / 3;
+    for (let i = 0; i < 3; i++) {
+      const a = rotorAng + (Math.PI * 2 * i) / 3;
+      ctx.moveTo(0, -r.h * 0.55);
+      ctx.lineTo(Math.cos(a) * rotorR * 0.5, -r.h * 0.55 + Math.sin(a) * 3);
+    }
+    ctx.stroke();
+    // body — glowing hexagonal drone
+    ctx.shadowColor = dangerColor;
+    ctx.shadowBlur = 22 * pulse;
+    ctx.fillStyle = "#2a0a14";
+    ctx.strokeStyle = dangerColor;
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    const rr = r.w / 2;
+    for (let i = 0; i < 6; i++) {
+      const a = (Math.PI / 3) * i + Math.PI / 6;
+      const vx = Math.cos(a) * rr;
+      const vy = Math.sin(a) * rr * 0.8;
+      if (i === 0) ctx.moveTo(vx, vy);
+      else ctx.lineTo(vx, vy);
+    }
+    ctx.closePath();
+    ctx.fill();
+    ctx.stroke();
+    // blinking core eye
+    ctx.shadowBlur = 12;
+    ctx.fillStyle = Math.sin(frame / 5) > 0 ? "#ffd7de" : dangerColor;
+    ctx.beginPath();
+    ctx.arc(0, 0, 4 + pulse * 1.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
   for (const fe of engine.level.fakeExits ?? []) {
     const revealed = engine.fakeExitPulses.includes(fe.id);
     drawFlag(ctx, fe.x * TILE, fe.y * TILE, revealed ? fakeRevealColor : "#ffd23d", frame);

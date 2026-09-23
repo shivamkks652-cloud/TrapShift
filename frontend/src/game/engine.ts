@@ -115,6 +115,7 @@ export class GameEngine {
   jumpBoostCharges = 0;
   jumpBoostMax = 0;
   collectedCubeIds: string[] = [];
+  private boostTrailTimer = 0;
   particles: Particle[] = [];
   cameraShake = 0;
   squash = 0; // -1..1 for squash/stretch visual, engine tracks landing impact
@@ -387,7 +388,7 @@ export class GameEngine {
         const ratio = this.jumpBoostCharges / this.jumpBoostMax;
         jumpVel = JUMP_VELOCITY * (1 + 0.55 * ratio);
         this.jumpBoostCharges--;
-        sfx.doubleTap();
+        sfx.boostJump();
         this.spawnParticles(
           this.player.x + this.player.w / 2,
           this.player.y + (this.gravityDir === 1 ? this.player.h : 0),
@@ -476,6 +477,9 @@ export class GameEngine {
     // mimic enemies
     this.checkMimics(dt);
 
+    // flying patrol drones
+    this.checkDrones();
+
     // fake exits
     this.checkFakeExits();
 
@@ -489,6 +493,23 @@ export class GameEngine {
     // long, "stuck in mid-air" plummet through the empty space under the level.
     if (this.player.y > this.rows().length * TILE + TILE * 0.5 || this.player.y < -TILE * 6) {
       this.die("fell");
+    }
+
+    // jump-boost trail: fading green motes behind the player while boosted airborne
+    if (this.jumpBoostCharges > 0 && !this.player.onGround) {
+      this.boostTrailTimer -= dt;
+      if (this.boostTrailTimer <= 0) {
+        this.boostTrailTimer = 0.05;
+        this.spawnParticles(
+          this.player.x + this.player.w / 2,
+          this.player.y + this.player.h / 2,
+          2,
+          "#39ffb0",
+          40,
+          Math.PI * 2,
+          "circle",
+        );
+      }
     }
 
     // visual-only wall contact tracking (drives wall-slide / wall-jump animation, no physics effect)
@@ -945,6 +966,25 @@ export class GameEngine {
     }
   }
 
+  // Drone position is deterministic from time (no per-drone state): it sweeps
+  // sinusoidally over `range` tiles starting at tile x. Lethal on any contact.
+  droneRect(d: { x: number; y: number; range: number; speed: number; phase?: number }): Rect {
+    const half = (d.range * TILE) / 2;
+    const cx = d.x * TILE + half + Math.sin(this.time * d.speed + (d.phase ?? 0) * Math.PI * 2) * half;
+    const size = TILE * 0.6;
+    return { x: cx - size / 2, y: d.y * TILE + (TILE - size) / 2, w: size, h: size };
+  }
+
+  private checkDrones() {
+    for (const d of this.level.patrolDrones ?? []) {
+      const rect = this.droneRect(d);
+      if (rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) {
+        this.die("drone");
+        return;
+      }
+    }
+  }
+
   private checkJumpCubes() {
     for (const c of this.level.jumpCubes ?? []) {
       if (this.collectedCubeIds.includes(c.id)) continue;
@@ -954,7 +994,7 @@ export class GameEngine {
         const charges = c.charges ?? 3;
         this.jumpBoostCharges = charges;
         this.jumpBoostMax = charges;
-        sfx.checkpoint();
+        sfx.boostPickup();
         this.spawnParticles(c.x * TILE + TILE / 2, c.y * TILE + TILE / 2, 14, "#39ffb0", 260);
         this.emit("boostPickup", { charges, max: charges });
       }

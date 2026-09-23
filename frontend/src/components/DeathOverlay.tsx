@@ -17,6 +17,7 @@ const CAUSE_LABEL: Record<string, string> = {
   steam: "Cooked by steam",
   firewall: "Burned by a firewall",
   crush: "Crushed by a piston",
+  drone: "Shot down by a patrol drone",
   fell: "Fell into the void",
 };
 

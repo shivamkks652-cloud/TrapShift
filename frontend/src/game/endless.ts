@@ -15,10 +15,10 @@ function mulberry32(seed: number) {
 const SEGMENT_WIDTH = 14;
 const ROWS = 7;
 
-type SegmentKind = "flat" | "gap" | "laser" | "movingWall" | "gravity" | "exploding";
+type SegmentKind = "flat" | "gap" | "laser" | "movingWall" | "gravity" | "exploding" | "drone";
 
 function buildSegment(rand: () => number, index: number): { rows: string[][]; level: Partial<LevelDef> } {
-  const kinds: SegmentKind[] = ["flat", "gap", "laser", "movingWall", "gravity", "exploding"];
+  const kinds: SegmentKind[] = ["flat", "gap", "laser", "movingWall", "gravity", "exploding", "drone"];
   const kind = index < 2 ? "flat" : kinds[Math.floor(rand() * kinds.length)];
   const rows: string[][] = Array.from({ length: ROWS }, () => Array(SEGMENT_WIDTH).fill("."));
   for (let x = 0; x < SEGMENT_WIDTH; x++) rows[ROWS - 1][x] = "#";
@@ -40,6 +40,8 @@ function buildSegment(rand: () => number, index: number): { rows: string[][]; le
     const pStart = 5 + Math.floor(rand() * 3);
     for (let x = pStart; x < pStart + 3 && x < SEGMENT_WIDTH; x++) rows[ROWS - 1][x] = "~";
     (extra as any)._explodeAt = pStart;
+  } else if (kind === "drone") {
+    (extra as any)._droneAt = 4 + Math.floor(rand() * 3);
   }
   return { rows, level: extra };
 }
@@ -53,6 +55,7 @@ export function generateEndlessLevel(seed: number, segmentCount = 40): LevelDef 
   const explodingPlatforms: any[] = [];
   const shards: any[] = [];
   const jumpCubes: any[] = [];
+  const patrolDrones: any[] = [];
 
   for (let i = 0; i < segmentCount; i++) {
     const { rows: segRows, level } = buildSegment(rand, i);
@@ -92,6 +95,16 @@ export function generateEndlessLevel(seed: number, segmentCount = 40): LevelDef 
     if (anyLevel._gap && rand() > 0.4) {
       jumpCubes.push({ id: `cube-${i}`, x: offset + 2, y: ROWS - 2, charges: 3 });
     }
+    if (anyLevel._droneAt !== undefined) {
+      patrolDrones.push({
+        id: `drone-${i}`,
+        x: offset + anyLevel._droneAt,
+        y: ROWS - 3,
+        range: 5,
+        speed: 1.2 + rand() * 1.2,
+        phase: rand(),
+      });
+    }
     if (anyLevel._explodeAt !== undefined) {
       explodingPlatforms.push({
         id: `exp-${i}`,
@@ -125,6 +138,7 @@ export function generateEndlessLevel(seed: number, segmentCount = 40): LevelDef 
     explodingPlatforms,
     shards,
     jumpCubes,
+    patrolDrones,
     parTime: 999,
   };
 }

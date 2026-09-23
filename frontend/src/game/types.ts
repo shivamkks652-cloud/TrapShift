@@ -121,6 +121,17 @@ export interface MimicEnemy {
   lungeSpeed: number;
 }
 
+// Flying patrol drone: hovers at a fixed tile y and sweeps horizontally over
+// `range` tiles starting from tile x, sinusoidally. Lethal on any contact.
+export interface PatrolDrone {
+  id: string;
+  x: number; // left-most tile of the patrol path
+  y: number; // hover tile row
+  range: number; // tiles of travel
+  speed: number; // rad/sec oscillation speed
+  phase?: number; // 0..1 start offset
+}
+
 export interface SteamVent {
   id: string;
   x: number; // tile x (base of the jet)
@@ -210,6 +221,7 @@ export interface LevelDef {
   checkpoints?: Checkpoint[];
   shards?: Shard[];
   jumpCubes?: JumpCube[];
+  patrolDrones?: PatrolDrone[];
   movingWalls?: MovingWall[];
   gravityZones?: GravityZone[];
   reverseZones?: ReverseZone[];

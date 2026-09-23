@@ -156,6 +156,16 @@ export const sfx = {
   jump: () => sweep(320, 620, 0.14, "square", 0.35),
   land: () => noiseBurst(0.08, 0.25, 900),
   doubleTap: () => tone(880, 0.05, "sine", 0.001, 0.2),
+  boostJump: () => {
+    sweep(520, 1240, 0.18, "sine", 0.4);
+    tone(1560, 0.1, "triangle", 0.01, 0.25);
+    setTimeout(() => tone(2093, 0.12, "sine", 0.001, 0.2), 50);
+  },
+  boostPickup: () => {
+    tone(659, 0.08, "triangle", 0.005, 0.3);
+    setTimeout(() => tone(880, 0.08, "triangle", 0.005, 0.3), 70);
+    setTimeout(() => tone(1318, 0.14, "sine", 0.005, 0.3), 140);
+  },
   shard: () => {
     tone(1046, 0.09, "sine", 0.001, 0.3);
     setTimeout(() => tone(1568, 0.12, "sine", 0.001, 0.28), 60);
