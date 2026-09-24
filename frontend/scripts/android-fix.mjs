@@ -22,46 +22,80 @@ const fail = (m) => { console.error(`❌ ${m}`); };
 const info = (m) => console.log(`ℹ️  ${m}`);
 
 // --- Java 21 auto-detect: Capacitor 8 needs JDK 21. "invalid source release: 21"
-// ka matlab JAVA_HOME purane JDK pe hai. Android Studio ka bundled JBR (JDK 21)
-// dhoondh ke use karo — user ko manually kuch install karne ki zaroorat nahi.
+// ka matlab JAVA_HOME purane JDK pe hai. Har candidate ka ACTUAL version check
+// karo (sirf path exist karna kaafi nahi — purana JAVA_HOME bhi reject hoga).
+function javaMajor(home) {
+  try {
+    const bin = path.join(home, "bin", isWin ? "java.exe" : "java");
+    const r = spawnSync(bin, ["-version"], { shell: isWin });
+    const text = `${r.stderr?.toString() || ""}${r.stdout?.toString() || ""}`;
+    const m = text.match(/version "(\d+)/);
+    return m ? parseInt(m[1], 10) : 0;
+  } catch {
+    return 0;
+  }
+}
+
 function detectJavaHome() {
-  if (process.env.JAVA_HOME && fs.existsSync(process.env.JAVA_HOME)) return process.env.JAVA_HOME;
-  const candidates = isWin
-    ? [
-        "C:\\Program Files\\Android\\Android Studio\\jbr",
-        "C:\\Program Files\\Android\\Android Studio\\jre",
-        "D:\\Program Files\\Android\\Android Studio\\jbr",
-      ]
-    : [
-        "/Applications/Android Studio.app/Contents/jbr/Contents/Home",
-        "/opt/android-studio/jbr",
-        path.join(process.env.HOME || "", "android-studio/jbr"),
-        "/usr/lib/jvm/java-21-openjdk-amd64",
-      ];
-  for (const c of candidates) if (c && fs.existsSync(c)) return c;
+  const candidates = [];
+  if (process.env.JAVA_HOME) candidates.push(process.env.JAVA_HOME);
+  candidates.push(
+    ...(isWin
+      ? [
+          "C:\\Program Files\\Android\\Android Studio\\jbr",
+          "C:\\Program Files\\Android\\Android Studio\\jre",
+          "D:\\Program Files\\Android\\Android Studio\\jbr",
+          path.join(process.env.LOCALAPPDATA || "", "Programs", "Android Studio", "jbr"),
+        ]
+      : [
+          "/Applications/Android Studio.app/Contents/jbr/Contents/Home",
+          "/opt/android-studio/jbr",
+          path.join(process.env.HOME || "", "android-studio/jbr"),
+          "/usr/lib/jvm/java-21-openjdk-amd64",
+        ])
+  );
+  for (const c of candidates) {
+    if (!c || !fs.existsSync(c)) continue;
+    const v = javaMajor(c);
+    info(`Java check: ${c} → version ${v || "unknown"}`);
+    if (v >= 21) return c;
+  }
   return null;
 }
 const javaHome = detectJavaHome();
-if (javaHome) ok(`Java 21 mila: ${javaHome}`);
-else info("JAVA_HOME nahi mila — system java use hoga. Agar 'invalid source release: 21' aaye to JDK 21 install karo.");
-
-// gradle.properties me bhi daal do taaki Android Studio build bhi sahi JDK use kare
-const gradlePropsPath = path.join(androidRoot, "gradle.properties");
-if (javaHome && fs.existsSync(androidRoot) && fs.existsSync(gradlePropsPath)) {
-  let props = fs.readFileSync(gradlePropsPath, "utf8");
-  if (!props.includes("org.gradle.java.home")) {
-    props += `\norg.gradle.java.home=${javaHome.replace(/\\/g, "\\\\").replace(/:/g, "\\:")}\n`;
-    fs.writeFileSync(gradlePropsPath, props);
-    ok("gradle.properties me Java path set kar diya.");
-  }
-}
+if (javaHome) ok(`Java 21+ mila: ${javaHome}`);
 
 if (!fs.existsSync(androidRoot)) {
   fail("android/ folder nahi mila. Pehle project folder me jao (jahan android/ folder hai) aur phir chalao.");
   process.exit(1);
 }
 
-const gradleEnv = javaHome ? { ...process.env, JAVA_HOME: javaHome } : process.env;
+// gradle.properties me java home likho (existing line ho to replace karo — pehle
+// galat/purana path likha ho sakta hai)
+const gradlePropsPath = path.join(androidRoot, "gradle.properties");
+if (javaHome && fs.existsSync(gradlePropsPath)) {
+  let props = fs.readFileSync(gradlePropsPath, "utf8");
+  const escaped = javaHome.replace(/\\/g, "\\\\").replace(/:/g, "\\:");
+  if (props.includes("org.gradle.java.home")) {
+    props = props.replace(/org\.gradle\.java\.home=.*/g, `org.gradle.java.home=${escaped}`);
+  } else {
+    props += `\norg.gradle.java.home=${escaped}\n`;
+  }
+  fs.writeFileSync(gradlePropsPath, props);
+  ok("gradle.properties me Java 21 path set kar diya.");
+}
+
+if (!javaHome) {
+  fail("JDK 21 kahi nahi mila. Capacitor 8 ke liye Java 21 ZAROORI hai.");
+  if (isWin) {
+    info("Windows pe install karne ke liye ye command chalao (admin PowerShell):");
+    info("   winget install EclipseAdoptium.Temurin.21.JDK");
+    info("Phir terminal band karke naya kholo aur dobara: npm run android:fix");
+  }
+  process.exit(1);
+}
+
+const gradleEnv = { ...process.env, JAVA_HOME: javaHome };
 
 function run(cmd, args, cwd) {
   info(`Running: ${cmd} ${args.join(" ")}`);
