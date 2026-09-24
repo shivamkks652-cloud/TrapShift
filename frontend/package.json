@@ -10,7 +10,8 @@
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "patch:admob": "node scripts/patch-admob-manifest.mjs",
-    "postinstall": "node scripts/patch-admob-manifest.mjs",
+    "patch:java17": "node scripts/patch-java17.mjs",
+    "postinstall": "node scripts/patch-admob-manifest.mjs && node scripts/patch-java17.mjs",
     "android:fix": "node scripts/android-fix.mjs",
     "cap:sync": "cap sync android && node scripts/patch-admob-manifest.mjs",
     "cap:add": "cap add android && node scripts/patch-admob-manifest.mjs"

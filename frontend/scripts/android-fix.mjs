@@ -21,9 +21,9 @@ const ok = (m) => console.log(`✅ ${m}`);
 const fail = (m) => { console.error(`❌ ${m}`); };
 const info = (m) => console.log(`ℹ️  ${m}`);
 
-// --- Java 21 auto-detect: Capacitor 8 needs JDK 21. "invalid source release: 21"
-// ka matlab JAVA_HOME purane JDK pe hai. Har candidate ka ACTUAL version check
-// karo (sirf path exist karna kaafi nahi — purana JAVA_HOME bhi reject hoga).
+// --- Java auto-detect: Project ab JAVA 17 COMPATIBLE hai (patch-java17.mjs ne
+// Capacitor 8 ke gradle files ko VERSION_17 kar diya). Toh JDK 17+ kaafi hai.
+// Har candidate ka ACTUAL version check karo (purana JAVA_HOME bhi reject hoga).
 function javaMajor(home) {
   try {
     const bin = path.join(home, "bin", isWin ? "java.exe" : "java");
@@ -46,24 +46,37 @@ function detectJavaHome() {
           "C:\\Program Files\\Android\\Android Studio\\jre",
           "D:\\Program Files\\Android\\Android Studio\\jbr",
           path.join(process.env.LOCALAPPDATA || "", "Programs", "Android Studio", "jbr"),
+          "C:\\Program Files\\Eclipse Adoptium",
+          "C:\\Program Files\\Java",
         ]
       : [
           "/Applications/Android Studio.app/Contents/jbr/Contents/Home",
           "/opt/android-studio/jbr",
           path.join(process.env.HOME || "", "android-studio/jbr"),
+          "/usr/lib/jvm/java-17-openjdk-amd64",
           "/usr/lib/jvm/java-21-openjdk-amd64",
         ])
   );
+  // Directory candidates (Eclipse Adoptium/Java) ke andar jdk-* subfolder bhi check karo
+  const expanded = [];
   for (const c of candidates) {
     if (!c || !fs.existsSync(c)) continue;
+    expanded.push(c);
+    try {
+      for (const sub of fs.readdirSync(c)) {
+        if (/^jdk|^jbr|^java/i.test(sub)) expanded.push(path.join(c, sub));
+      }
+    } catch { /* not a dir */ }
+  }
+  for (const c of expanded) {
     const v = javaMajor(c);
-    info(`Java check: ${c} → version ${v || "unknown"}`);
-    if (v >= 21) return c;
+    if (v > 0) info(`Java check: ${c} → version ${v}`);
+    if (v >= 17) return c;
   }
   return null;
 }
 const javaHome = detectJavaHome();
-if (javaHome) ok(`Java 21+ mila: ${javaHome}`);
+if (javaHome) ok(`Java 17+ mila: ${javaHome}`);
 
 if (!fs.existsSync(androidRoot)) {
   fail("android/ folder nahi mila. Pehle project folder me jao (jahan android/ folder hai) aur phir chalao.");
@@ -86,10 +99,10 @@ if (javaHome && fs.existsSync(gradlePropsPath)) {
 }
 
 if (!javaHome) {
-  fail("JDK 21 kahi nahi mila. Capacitor 8 ke liye Java 21 ZAROORI hai.");
+  fail("JDK 17+ kahi nahi mila. Kam se kam Java 17 ZAROORI hai.");
   if (isWin) {
     info("Windows pe install karne ke liye ye command chalao (admin PowerShell):");
-    info("   winget install EclipseAdoptium.Temurin.21.JDK");
+    info("   winget install EclipseAdoptium.Temurin.17.JDK");
     info("Phir terminal band karke naya kholo aur dobara: npm run android:fix");
   }
   process.exit(1);
@@ -106,8 +119,9 @@ function run(cmd, args, cwd) {
   }
 }
 
-// --- Step 1: patch manifest + strings ---
-info("STEP 1/5: AndroidManifest.xml + strings.xml patch ho rahi hai...");
+// --- Step 1: java17 + admob patches ---
+info("STEP 1/5: Java 17 compatibility + AdMob manifest patch ho rahi hai...");
+run("node", [path.join(__dirname, "patch-java17.mjs")], frontendRoot);
 run("node", [path.join(__dirname, "patch-admob-manifest.mjs")], frontendRoot);
 
 // --- Step 2: clean (stale build cache = asli culprit) ---
