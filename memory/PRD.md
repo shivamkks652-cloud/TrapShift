@@ -267,7 +267,13 @@ User choices (ask_human, Hinglish): har death pe prompt; "Watch Ad & Continue" =
 - BUILD.md §5 rewritten: real ad units + manifest App ID meta-data snippet (dev=TEST units via import.meta.env.PROD).
 Verified: tsc clean; headless bot `node tools_test/run.mjs tools_test/all_test.ts` = 129/129 PASS (43 levels solvable, engine regression clean); live E2E web — story: death overlay on fall, ad-continue revives, respawn path works; endless: overlay → End Run → Run Over (NEW BEST), retry → second death → ad continue resumes run; zero console errors.
 
-## AdMob app-ads.txt Hosting (2026-09-13) — DONE (web side), push pending (GitHub)
+## App Crash Fix + Automatic AdMob Manifest Patching (2026-09-23) — DONE
+User reported: app crashes on launch on real Android device. Logcat: `FATAL EXCEPTION: main ... java.lang.RuntimeException: Unable to get provider com.google.android.gms.ads... * Missing application ID` — the AdMob App ID meta-data was missing from AndroidManifest.xml (android/ folder is on user's local machine, NOT in this repo). User demanded "Automatic krna hai".
+- NEW scripts/patch-admob-manifest.mjs: idempotent node script that injects `<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3735972538807236~2413074131"/>` before `</application>`; also repairs a wrong/old App ID value; skips cleanly if android/ doesn't exist yet.
+- package.json scripts: `npm run cap:sync` (= cap sync android + auto-patch), `npm run cap:add` (= cap add android + auto-patch), `npm run patch:admob` (patch only).
+- BUILD.md §5 updated: App ID is now automatic via cap:sync; manual XML editing no longer needed.
+- Verified: script tested on a dummy manifest — injects correctly on first run, no-op on second run.
+USER NEXT STEP: git pull → `npm run cap:sync` → rebuild app. Crash gone.
 User spec: file named exactly app-ads.txt, content exactly `google.com, pub-3735972538807236, DIRECT, f08c47fec0942fa0`, served from website ROOT (/app-ads.txt), plain text, no HTML, no login, HTTPS, no redirects. No game/AdMob ID changes.
 - Created: frontend/public/app-ads.txt (Vite serves public/ at root → /app-ads.txt on Emergent web deploys), docs/app-ads.txt (monorepo /docs for GitHub Pages Trapshift1 branch), frontend/docs/app-ads.txt (repo-root /docs variant).
 - Verified LIVE: https://trapshift-deathfix.preview.emergentagent.com/app-ads.txt → HTTP 200, content-type text/plain, zero redirects, exact byte-match content, publicly accessible (no auth).

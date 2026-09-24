@@ -84,15 +84,7 @@ Output locations:
 AdMob is wired via `@capacitor-community/admob` (see `src/game/ads.ts`). Real ads run only on the native build; the web preview simulates them.
 
 - **Ad units** (rewarded `…/2262699194`, banner `…/3575780862`) already live in `src/game/ads.ts`. Dev/debug builds automatically use Google's official TEST units (`import.meta.env.PROD` switch); production builds use the real units.
-- **App ID** — make sure `android/app/src/main/AndroidManifest.xml` contains this inside `<application>`:
-
-```xml
-<meta-data
-  android:name="com.google.android.gms.ads.APPLICATION_ID"
-  android:value="ca-app-pub-3735972538807236~2413074131"/>
-```
-
-- Rebuild (`npm run build && npx cap sync android`) and re-run the Gradle build after any ad config change.
+- **App ID — AUTOMATIC**: `npm run cap:sync` chalao (ye `cap sync android` ke saath `scripts/patch-admob-manifest.mjs` bhi chalata hai jo `android/app/src/main/AndroidManifest.xml` me App ID meta-data khud inject kar deta hai — idempotent, har baar safe). Kabhi manually manifest edit karne ki zaroorat nahi. Sirf manifest patch karna ho to `npm run patch:admob`.
 
 Debug builds show test ads — do not click real production ads from your own device during testing (AdMob policy).
 
