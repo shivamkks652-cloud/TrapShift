@@ -21,14 +21,51 @@ const ok = (m) => console.log(`✅ ${m}`);
 const fail = (m) => { console.error(`❌ ${m}`); };
 const info = (m) => console.log(`ℹ️  ${m}`);
 
+// --- Java 21 auto-detect: Capacitor 8 needs JDK 21. "invalid source release: 21"
+// ka matlab JAVA_HOME purane JDK pe hai. Android Studio ka bundled JBR (JDK 21)
+// dhoondh ke use karo — user ko manually kuch install karne ki zaroorat nahi.
+function detectJavaHome() {
+  if (process.env.JAVA_HOME && fs.existsSync(process.env.JAVA_HOME)) return process.env.JAVA_HOME;
+  const candidates = isWin
+    ? [
+        "C:\\Program Files\\Android\\Android Studio\\jbr",
+        "C:\\Program Files\\Android\\Android Studio\\jre",
+        "D:\\Program Files\\Android\\Android Studio\\jbr",
+      ]
+    : [
+        "/Applications/Android Studio.app/Contents/jbr/Contents/Home",
+        "/opt/android-studio/jbr",
+        path.join(process.env.HOME || "", "android-studio/jbr"),
+        "/usr/lib/jvm/java-21-openjdk-amd64",
+      ];
+  for (const c of candidates) if (c && fs.existsSync(c)) return c;
+  return null;
+}
+const javaHome = detectJavaHome();
+if (javaHome) ok(`Java 21 mila: ${javaHome}`);
+else info("JAVA_HOME nahi mila — system java use hoga. Agar 'invalid source release: 21' aaye to JDK 21 install karo.");
+
+// gradle.properties me bhi daal do taaki Android Studio build bhi sahi JDK use kare
+const gradlePropsPath = path.join(androidRoot, "gradle.properties");
+if (javaHome && fs.existsSync(androidRoot) && fs.existsSync(gradlePropsPath)) {
+  let props = fs.readFileSync(gradlePropsPath, "utf8");
+  if (!props.includes("org.gradle.java.home")) {
+    props += `\norg.gradle.java.home=${javaHome.replace(/\\/g, "\\\\").replace(/:/g, "\\:")}\n`;
+    fs.writeFileSync(gradlePropsPath, props);
+    ok("gradle.properties me Java path set kar diya.");
+  }
+}
+
 if (!fs.existsSync(androidRoot)) {
   fail("android/ folder nahi mila. Pehle project folder me jao (jahan android/ folder hai) aur phir chalao.");
   process.exit(1);
 }
 
+const gradleEnv = javaHome ? { ...process.env, JAVA_HOME: javaHome } : process.env;
+
 function run(cmd, args, cwd) {
   info(`Running: ${cmd} ${args.join(" ")}`);
-  const r = spawnSync(cmd, args, { cwd, stdio: "inherit", shell: isWin });
+  const r = spawnSync(cmd, args, { cwd, stdio: "inherit", shell: isWin, env: gradleEnv });
   if (r.status !== 0) {
     fail(`Command fail ho gayi: ${cmd} ${args.join(" ")}`);
     process.exit(1);
