@@ -1,7 +1,8 @@
 // Auto-injects AdMob configuration into native Android project files:
 // 1. android/app/src/main/AndroidManifest.xml -> <meta-data com.google.android.gms.ads.APPLICATION_ID>
-// 2. android/app/src/main/res/values/strings.xml -> <string name="admob_app_id">
-// 3. android/app/src/main/res/values/strings.xml -> <string name="admob_banner_id">, <string name="admob_rewarded_id">
+//    with xmlns:tools namespace + tools:replace="android:value" (zaroori — warna manifest merger
+//    dependency ka empty value use karta hai aur app crash hoti hai)
+// 2. android/app/src/main/res/values/strings.xml -> admob_app_id / admob_banner_id / admob_rewarded_id
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -23,26 +24,48 @@ if (!fs.existsSync(androidRoot)) {
 // --- 1. Patch AndroidManifest.xml ---
 if (fs.existsSync(manifestPath)) {
   let xml = fs.readFileSync(manifestPath, "utf8");
+  let changed = false;
+
+  // 1a. xmlns:tools namespace (tools:replace ke liye zaroori)
+  if (!xml.includes("xmlns:tools=")) {
+    xml = xml.replace(
+      /<manifest([^>]*)>/,
+      '<manifest$1\n    xmlns:tools="http://schemas.android.com/tools">'
+    );
+    changed = true;
+    console.log("[patch-admob] xmlns:tools namespace add kiya.");
+  }
+
+  // 1b. App ID meta-data (inject ya repair, hamesha tools:replace ke saath)
   if (xml.includes("com.google.android.gms.ads.APPLICATION_ID")) {
-    if (xml.includes(APP_ID)) {
-      console.log("[patch-admob] AndroidManifest: App ID already correct.");
-    } else {
+    if (!xml.includes(APP_ID)) {
       xml = xml.replace(
         /(android:name="com\.google\.android\.gms\.ads\.APPLICATION_ID"[\s\S]*?android:value=")[^"]*(")/,
         `$1${APP_ID}$2`
       );
-      fs.writeFileSync(manifestPath, xml);
-      console.log(`[patch-admob] AndroidManifest: App ID updated to ${APP_ID}`);
+      changed = true;
+      console.log(`[patch-admob] App ID value update ki: ${APP_ID}`);
+    }
+    if (!xml.includes('tools:replace="android:value"')) {
+      xml = xml.replace(
+        /(android:name="com\.google\.android\.gms\.ads\.APPLICATION_ID"[^>]*?)(\s*\/>)/,
+        '$1\n            tools:replace="android:value"$2'
+      );
+      changed = true;
+      console.log("[patch-admob] tools:replace add kiya (merger conflict fix).");
     }
   } else if (xml.includes("</application>")) {
-    const metaData = `\n        <meta-data\n            android:name="com.google.android.gms.ads.APPLICATION_ID"\n            android:value="${APP_ID}"/>\n`;
+    const metaData = `\n        <meta-data\n            android:name="com.google.android.gms.ads.APPLICATION_ID"\n            android:value="${APP_ID}"\n            tools:replace="android:value"/>\n`;
     xml = xml.replace("</application>", `${metaData}    </application>`);
-    fs.writeFileSync(manifestPath, xml);
-    console.log(`[patch-admob] AndroidManifest: App ID injected (${APP_ID})`);
+    changed = true;
+    console.log(`[patch-admob] App ID inject kiya with tools:replace (${APP_ID})`);
   }
+
+  if (changed) fs.writeFileSync(manifestPath, xml);
+  else console.log("[patch-admob] AndroidManifest already fully patched.");
 }
 
-// --- 2. Patch strings.xml (used by some Capacitor AdMob plugin versions) ---
+// --- 2. Patch strings.xml ---
 if (fs.existsSync(stringsPath)) {
   let strXml = fs.readFileSync(stringsPath, "utf8");
   const entries = [
@@ -50,7 +73,6 @@ if (fs.existsSync(stringsPath)) {
     { key: "admob_banner_id", val: BANNER_ID },
     { key: "admob_rewarded_id", val: REWARDED_ID },
   ];
-
   for (const { key, val } of entries) {
     const regex = new RegExp(`<string name="${key}">[^<]*</string>`);
     if (regex.test(strXml)) {
@@ -60,7 +82,7 @@ if (fs.existsSync(stringsPath)) {
     }
   }
   fs.writeFileSync(stringsPath, strXml);
-  console.log("[patch-admob] strings.xml: AdMob strings injected/updated.");
+  console.log("[patch-admob] strings.xml patched.");
 }
 
 console.log("[patch-admob] SUCCESS: All AdMob configs patched.");
