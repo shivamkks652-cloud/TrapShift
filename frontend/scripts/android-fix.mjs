@@ -39,24 +39,26 @@ function javaMajor(home) {
 function detectJavaHome() {
   const candidates = [];
   if (process.env.JAVA_HOME) candidates.push(process.env.JAVA_HOME);
-  candidates.push(
-    ...(isWin
-      ? [
-          "C:\\Program Files\\Android\\Android Studio\\jbr",
-          "C:\\Program Files\\Android\\Android Studio\\jre",
-          "D:\\Program Files\\Android\\Android Studio\\jbr",
-          path.join(process.env.LOCALAPPDATA || "", "Programs", "Android Studio", "jbr"),
-          "C:\\Program Files\\Eclipse Adoptium",
-          "C:\\Program Files\\Java",
-        ]
-      : [
-          "/Applications/Android Studio.app/Contents/jbr/Contents/Home",
-          "/opt/android-studio/jbr",
-          path.join(process.env.HOME || "", "android-studio/jbr"),
-          "/usr/lib/jvm/java-17-openjdk-amd64",
-          "/usr/lib/jvm/java-21-openjdk-amd64",
-        ])
-  );
+  if (isWin) {
+    // Android Studio kisi bhi naam se install ho sakta hai ("Android Studio",
+    // "Android Studio1", etc.) — C:\Program Files\Android\ ke saare subfolders scan karo
+    for (const root of ["C:\\Program Files\\Android", "D:\\Program Files\\Android", path.join(process.env.LOCALAPPDATA || "", "Programs")]) {
+      try {
+        for (const sub of fs.readdirSync(root)) {
+          if (/android studio/i.test(sub)) candidates.push(path.join(root, sub, "jbr"));
+        }
+      } catch { /* dir nahi hai */ }
+    }
+    candidates.push("C:\\Program Files\\Eclipse Adoptium", "C:\\Program Files\\Java");
+  } else {
+    candidates.push(
+      "/Applications/Android Studio.app/Contents/jbr/Contents/Home",
+      "/opt/android-studio/jbr",
+      path.join(process.env.HOME || "", "android-studio/jbr"),
+      "/usr/lib/jvm/java-17-openjdk-amd64",
+      "/usr/lib/jvm/java-21-openjdk-amd64",
+    );
+  }
   // Directory candidates (Eclipse Adoptium/Java) ke andar jdk-* subfolder bhi check karo
   const expanded = [];
   for (const c of candidates) {
