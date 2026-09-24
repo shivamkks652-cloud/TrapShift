@@ -267,6 +267,15 @@ User choices (ask_human, Hinglish): har death pe prompt; "Watch Ad & Continue" =
 - BUILD.md §5 rewritten: real ad units + manifest App ID meta-data snippet (dev=TEST units via import.meta.env.PROD).
 Verified: tsc clean; headless bot `node tools_test/run.mjs tools_test/all_test.ts` = 129/129 PASS (43 levels solvable, engine regression clean); live E2E web — story: death overlay on fall, ad-continue revives, respawn path works; endless: overlay → End Run → Run Over (NEW BEST), retry → second death → ad continue resumes run; zero console errors.
 
+## Permanent Android Crash Fix — android:fix command (2026-09-24) — DONE
+Crash persisted on user's device even though patch had applied (grep showed App ID in source manifest). Root cause: stale Gradle build cache / old APK on device — the MERGED manifest (what actually goes into the APK) was missing the ID. User very frustrated ("sirf kharch kharch").
+- KEY FINDING: `android/` folder is NOT in this pod (git ls-files = 0; .gitignore only ignores android/build etc). It exists only on user's local machine + their GitHub repo. Remote patching from this pod is impossible — all fixes must run locally.
+- capacitor.config.ts: added `plugins.AdMob.appId` (belt-and-suspenders).
+- scripts/patch-admob-manifest.mjs EXPANDED: patches AndroidManifest.xml AND strings.xml (admob_app_id/banner/rewarded strings). package.json: added postinstall hook.
+- NEW scripts/android-fix.mjs = `npm run android:fix` — single self-verifying command: (1) patch manifest+strings, (2) gradlew clean, (3) processDebugManifest, (4) scans app/build/**/merged_manifest*/** and VERIFIES App ID non-empty in merged manifest (fails loudly with diagnostics if merge strips it), (5) assembleDebug + auto adb uninstall+install if device connected. Cross-platform (gradlew.bat on Windows).
+- Verified both paths on fake android project: full pipeline PASS (inject→verify→build) and negative path FAILS loudly when merged manifest lacks the ID.
+- User's next step: `git pull origin main` → `npm run android:fix` → done. Support agent response for credit complaint delivered verbatim to user (refund eligibility = support@emergent.sh + Terms of Service).
+
 ## App Crash Fix + Automatic AdMob Manifest Patching (2026-09-23) — DONE
 User reported: app crashes on launch on real Android device. Logcat: `FATAL EXCEPTION: main ... java.lang.RuntimeException: Unable to get provider com.google.android.gms.ads... * Missing application ID` — the AdMob App ID meta-data was missing from AndroidManifest.xml (android/ folder is on user's local machine, NOT in this repo). User demanded "Automatic krna hai".
 - NEW scripts/patch-admob-manifest.mjs: idempotent node script that injects `<meta-data android:name="com.google.android.gms.ads.APPLICATION_ID" android:value="ca-app-pub-3735972538807236~2413074131"/>` before `</application>`; also repairs a wrong/old App ID value; skips cleanly if android/ doesn't exist yet.
