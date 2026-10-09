@@ -239,6 +239,12 @@ User approved 3 backlog enhancements (ask_human: flying drone enemy; cubes on 1-
 4. Endless generator: new "drone" segment kind (drone patrolling 5 tiles at ROWS-3).
 Verified: tsc clean; all_test.ts 129/129 (43 levels solvable WITH drones placed); NEW tools_test/drone_cube_test.ts 17/17 PASS (all 14 drone levels kill instantly on contact; cube pickup sets charges; boosted jump vel 1172 vs normal 780 (+50%) and depletes; boost clears on respawn); live w1-3 shows the red glowing drone in-world.
 
+## Strong Button Haptics (2026-10-09) — DONE
+User demand: buttons pe STRONG haptic feel har device pe (Poco/Redmi budget motors pe bhi). Pehle buttons Light(14ms)/Medium(22ms) impact dete the — bahut weak.
+- haptics.ts: NEW `uiPress(heavy)` — native pe ImpactStyle.Heavy + 50ms raw Haptics.vibrate double-pulse (jump), Medium + punchy web pattern (left/right); web fallback navigator.vibrate strong double-buzz [0,70,35,110] / [0,55].
+- GameCanvas TouchButton: vibrate() → uiPress(big); press visuals stronger — active:scale-[0.82] + active:bg-white/25 + faster 75ms transition.
+- Haptics native-only note: real feel sirf Android build pe aayega (web pe navigator.vibrate). tsc clean; buttons render + tap path verified live (390x844).
+
 ## Rewarded-Ad Free Boost on Level Intro (2026-09-23) — DONE
 User approved: watch ad → free boost cube for the level.
 - LevelIntro.tsx: new "Watch Ad · Free Boost ×3" button (data-testid=intro-boost-ad-btn, green neon) under the level rule; busy state "Loading Ad…", failure note (intro-boost-ad-error), success badge "Boost ready — 3 powered jumps!" (intro-boost-granted). Offered once per level intro (resets on level change).

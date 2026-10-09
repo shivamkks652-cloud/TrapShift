@@ -6,7 +6,7 @@ import { getWorldOfLevel } from "@/game/levels";
 import { RESTART_DELAY_MS } from "@/game/constants";
 import { loadSave, recordLevelResult, getSettings } from "@/game/storage";
 import { resumeAudio, stopAllHums } from "@/game/audio";
-import { vibrate } from "@/game/haptics";
+import { uiPress } from "@/game/haptics";
 
 export interface GameCanvasHandle {
   restart: () => void;
@@ -290,7 +290,7 @@ function TouchButton({
       // Responsive size that scales with the smaller screen edge so it feels right
       // on tall Redmi/Poco phones and small devices alike, with a sane min/max.
       className={`relative rounded-full flex items-center justify-center font-bold text-white/95
-        active:scale-90 transition-transform duration-100 will-change-transform
+        active:scale-[0.82] active:bg-white/25 transition-transform duration-75 will-change-transform
         bg-white/[0.07] backdrop-blur-xl border border-white/25
         ${big
           ? "w-[clamp(72px,20vw,104px)] h-[clamp(72px,20vw,104px)] text-3xl"
@@ -309,7 +309,7 @@ function TouchButton({
         try {
           (e.currentTarget as HTMLElement).setPointerCapture(e.pointerId);
         } catch { /* ignore */ }
-        vibrate(big ? 22 : 14);
+        uiPress(big);
         onDown();
       }}
       onPointerUp={(e) => {

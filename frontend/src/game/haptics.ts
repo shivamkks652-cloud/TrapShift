@@ -49,3 +49,22 @@ export function vibrate(pattern: number | number[]) {
     /* vibration not permitted/supported */
   }
 }
+
+// UI button press — deliberately STRONG so it registers on budget motors
+// (Poco/Redmi etc.): native Heavy impact + a short raw buzz; web gets a
+// punchy double-vibration pattern.
+export function uiPress(heavy = false) {
+  try {
+    void Haptics.impact({ style: heavy ? ImpactStyle.Heavy : ImpactStyle.Medium });
+    if (heavy) void Haptics.vibrate({ duration: 50 });
+  } catch {
+    /* fall through to web */
+  }
+  try {
+    if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+      navigator.vibrate(heavy ? [0, 70, 35, 110] : [0, 55]);
+    }
+  } catch {
+    /* not supported */
+  }
+}
