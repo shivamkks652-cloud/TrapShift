@@ -120,7 +120,31 @@ function addStrategicDrones(levels: LevelDef[]): LevelDef[] {
   });
 }
 
-const enhance = (levels: LevelDef[]) => addStrategicDrones(addStrategicCubes(applyRunway(levels)));
+// Level extension: har level ke purane exit ke BAAD 14 extra tiles ka "final
+// stretch" jodo — flat floor + ek 2-tile gap (bonus hop) + gap ke upar ek bonus
+// shard. Gameplay lamba hota hai bina difficulty badhaye. Exit naye far end pe
+// shift, parTime +5s.
+const EXT_LEN = 14;
+function withExtension(level: LevelDef): LevelDef {
+  // Chase-hazard levels (mimic exits pe wait karta hai) ko extend nahi karte —
+  // warna pursuit extension me jaakar player ko pakad leti hai. Ye levels apne
+  // "one clean run" climax ke liye designed hain.
+  if ((level.mimicEnemies?.length ?? 0) > 0) return level;
+  const groundRowI = level.rows.length - 1;
+  const oldExitX = level.exit.x;
+  const floor = "######..######"; // exactly EXT_LEN chars, 2-tile gap in the middle
+  const rows = level.rows.map((r, i) => r + (i === groundRowI ? floor : ".".repeat(EXT_LEN)));
+  return {
+    ...level,
+    rows,
+    exit: { x: oldExitX + EXT_LEN - 1, y: level.exit.y },
+    shards: [...(level.shards ?? []), { id: `${level.id}-exts`, x: oldExitX + 6, y: groundRowI - 2 }],
+    parTime: level.parTime + 5,
+  };
+}
+
+const enhance = (levels: LevelDef[]) =>
+  addStrategicDrones(addStrategicCubes(applyRunway(levels).map(withExtension)));
 
 export const WORLDS: WorldDef[] = [
   { id: 1, name: WORLD_THEME[0].name, colorFrom: WORLD_THEME[0].from, colorTo: WORLD_THEME[0].to, accent: WORLD_THEME[0].accent, levels: enhance(world1) },

@@ -239,6 +239,13 @@ User approved 3 backlog enhancements (ask_human: flying drone enemy; cubes on 1-
 4. Endless generator: new "drone" segment kind (drone patrolling 5 tiles at ROWS-3).
 Verified: tsc clean; all_test.ts 129/129 (43 levels solvable WITH drones placed); NEW tools_test/drone_cube_test.ts 17/17 PASS (all 14 drone levels kill instantly on contact; cube pickup sets charges; boosted jump vel 1172 vs normal 780 (+50%) and depletes; boost clears on respawn); live w1-3 shows the red glowing drone in-world.
 
+## Backwards Alley Fix + Level Extensions (2026-10-10) — DONE
+User: "Backwards alley level clear nahi ho raha — easy karo; har level ka gameplay long karo." Choices: gaps fog ke bahar + fog chhota + checkpoint; har level lamba + 1-2 extra obstacle; baaki difficulty same.
+1. BACKWARDS ALLEY (w2-3): reverseZone {x:8,w:13} → {x:13,w:6} — fog ab sirf FLAT middle section pe (shard wala safe area), dono gaps (x10-12, x19-21) fog ke BAHAR. New checkpoint c2 at x24. Twist text updated. Verified live: fog visually sirf flat section pe.
+2. LEVEL EXTENSION (withExtension in levels/index.ts, applied in enhance() after runway): har level ke purane exit ke baad 14 extra tiles — flat floor + 2-tile gap (bonus hop) + gap ke upar bonus shard; exit +13 shift, parTime +5s. SKIP rule: levels with mimicEnemies extend nahi hote (w3-4, w4-4, w5-6 — chase hazard extension me player ko pakad leta tha).
+3. BOT improvements (all_test.ts): per-attempt budget 22s→32s (lambai ke liye), random-jump sirf jab aage solid footing ho (pit me random jump se bot gir raha tha). Iterations: spike-strip extension failed (bot rhythm), gap extension + mimic-skip + bot fix = 129/129 ALL PASS.
+Verified: tsc clean; all_test 129/129 (43 levels); drone_cube_test 17/17; live w2-3 — fog flat-section-only, gaps outside, intro + HUD (0/2 shards = extension shard live) confirmed.
+
 ## Strong Button Haptics (2026-10-09) — DONE
 User demand: buttons pe STRONG haptic feel har device pe (Poco/Redmi budget motors pe bhi). Pehle buttons Light(14ms)/Medium(22ms) impact dete the — bahut weak.
 - haptics.ts: NEW `uiPress(heavy)` — native pe ImpactStyle.Heavy + 50ms raw Haptics.vibrate double-pulse (jump), Medium + punchy web pattern (left/right); web fallback navigator.vibrate strong double-buzz [0,70,35,110] / [0,55].

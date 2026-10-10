@@ -53,7 +53,7 @@ for (const lv of levels) {
     e.time = Math.random() * 2.5;
     let deadFor = 0, stuckX = e.player.x, stuckT = 0;
     const dt = 1 / 120;
-    for (let step = 0; step < 120 * 22; step++) {
+    for (let step = 0; step < 120 * 32; step++) {
       if (e.status === "won") { solved = true; break; }
       if (e.status === "dead") { deadFor += dt; if (deadFor > 0.15) { e.respawn(); deadFor = 0; } continue; }
       maxX = Math.max(maxX, e.player.x);
@@ -73,7 +73,7 @@ for (const lv of levels) {
         }
         if (Math.abs(e.player.x - stuckX) < 2) { stuckT += dt; if (stuckT > 0.2) { jump = true; stuckT = 0; } }
         else { stuckX = e.player.x; stuckT = 0; }
-        if (Math.random() < 0.03) jump = true;
+        if (Math.random() < 0.03 && isFootingAhead(e, lv)) jump = true;
       }
       const goRight = !reversed;
       // steer toward the next required (lowest-order unarmed) switch of any closed

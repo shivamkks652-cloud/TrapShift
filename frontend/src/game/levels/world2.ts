@@ -71,7 +71,7 @@ export const world2: LevelDef[] = [
     index: 3,
     name: "Backwards Alley",
     ruleTaught: "Pink fog reverses left/right — think in a mirror, and mind the gaps.",
-    twist: "The pits are inside the fog. Commit to the mirror.",
+    twist: "The pits are outside the fog now — cross them first, then commit to the mirror.",
     rows: [
       "..............................",
       "..............................",
@@ -83,8 +83,13 @@ export const world2: LevelDef[] = [
     ],
     playerStart: { x: 2, y: 5 },
     exit: { x: 28, y: 5 },
-    reverseZones: [{ x: 8, y: 0, w: 13, h: 7 }],
-    checkpoints: [{ id: "c1", x: 5, y: 5 }],
+    // Fog ab sirf FLAT hisse pe hai (x 13-18) — dono gaps fog ke BAHAR hain,
+    // taaki mirror controls ka challenge fair rahe aur level clearable ho.
+    reverseZones: [{ x: 13, y: 0, w: 6, h: 7 }],
+    checkpoints: [
+      { id: "c1", x: 5, y: 5 },
+      { id: "c2", x: 24, y: 5 },
+    ],
     shards: [{ id: "s1", x: 16, y: 5 }],
     parTime: 22,
   },
