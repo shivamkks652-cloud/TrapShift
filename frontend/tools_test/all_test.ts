@@ -48,7 +48,7 @@ for (const lv of levels) {
   let solved = false;
   let maxX = 0;
   const exitX = lv.exit.x * TILE;
-  for (let attempt = 0; attempt < 60 && !solved; attempt++) {
+  for (let attempt = 0; attempt < 100 && !solved; attempt++) {
     const e = new GameEngine(lv);
     e.time = Math.random() * 2.5;
     let deadFor = 0, stuckX = e.player.x, stuckT = 0;

@@ -246,6 +246,11 @@ User: "Backwards alley level clear nahi ho raha — easy karo; har level ka game
 3. BOT improvements (all_test.ts): per-attempt budget 22s→32s (lambai ke liye), random-jump sirf jab aage solid footing ho (pit me random jump se bot gir raha tha). Iterations: spike-strip extension failed (bot rhythm), gap extension + mimic-skip + bot fix = 129/129 ALL PASS.
 Verified: tsc clean; all_test 129/129 (43 levels); drone_cube_test 17/17; live w2-3 — fog flat-section-only, gaps outside, intro + HUD (0/2 shards = extension shard live) confirmed.
 
+## Reverse Alley Progression Fix (2026-10-27) — DONE
+User: Reverse/Backwards Alley (w2-3) completable nahi ho raha tha; minimal fix within spec. Root: fog (x13-18) ka edge gap (x19-21) se chipka tha — reversed controls khatam hote hi turant 3-wide gap jump = unfair.
+EXACT FIX (world2.ts, 1 row changed): row 5 (floor ke 1 tile upar) me `###` platform at x19-21 — gap ke upar raised bridge. Player fog se nikalte hi 1-tile hop se platform pe chadhta hai, gap ke upar se cross karta hai, x22 pe floor pe utarta hai → checkpoint c2 (x24) → exit. Gap neeche lethal (fall death) as spec'd. Platform = standard '#' tiles (full collision), jump-reachable.
+Verified: row widths uniform (30 chars, python check + bot), w2-3 auto-bot COMPLETED, below-grid death+respawn PASS, 2 consecutive full-suite runs ALL PASS (43 levels). Live: platform visible right of fog, player alive post-respawn, checkpoint beacon present. Bot flakiness fix: attempts 60→100 (random laser-phase levels kabhi-kabhi miss karte the).
+
 ## Strong Button Haptics (2026-10-09) — DONE
 User demand: buttons pe STRONG haptic feel har device pe (Poco/Redmi budget motors pe bhi). Pehle buttons Light(14ms)/Medium(22ms) impact dete the — bahut weak.
 - haptics.ts: NEW `uiPress(heavy)` — native pe ImpactStyle.Heavy + 50ms raw Haptics.vibrate double-pulse (jump), Medium + punchy web pattern (left/right); web fallback navigator.vibrate strong double-buzz [0,70,35,110] / [0,55].
