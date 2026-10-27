@@ -86,10 +86,10 @@ export const world2: LevelDef[] = [
     // Fog sirf flat hisse pe (x 16-21). Pehla gap 2 shuttles se, aakhri gap 2 ulti-chal shuttles se.
     reverseZones: [{ x: 16, y: 0, w: 6, h: 7 }],
     movingWalls: [
-      { id: "mp1", x: 10, y: 6, w: 2, h: 1, axis: "x", range: 1, speed: 1.6, phase: 0 },
-      { id: "mp2", x: 13, y: 6, w: 2, h: 1, axis: "x", range: 1, speed: 1.6, phase: 0.25 },
-      { id: "mp3", x: 22, y: 6, w: 2, h: 1, axis: "x", range: 1, speed: 1.6, phase: 0 },
-      { id: "mp4", x: 25, y: 6, w: 2, h: 1, axis: "x", range: 1, speed: 1.6, phase: 0.5 },
+      { id: "mp1", x: 10, y: 6, w: 2, h: 1, axis: "x", range: 1, speed: 1.2, phase: 0 },
+      { id: "mp2", x: 13, y: 6, w: 2, h: 1, axis: "x", range: 1, speed: 1.2, phase: 0.25 },
+      { id: "mp3", x: 22, y: 6, w: 2, h: 1, axis: "x", range: 1, speed: 2.1, phase: 0 },
+      { id: "mp4", x: 25, y: 6, w: 2, h: 1, axis: "x", range: 1, speed: 2.1, phase: 0.5 },
     ],
     checkpoints: [
       { id: "c1", x: 5, y: 5 },

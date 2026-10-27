@@ -316,3 +316,4 @@ User spec: file named exactly app-ads.txt, content exactly `google.com, pub-3735
 - First gap (after start) now bridged by 2 moving shuttle tiles (mp1, mp2, speed 1.6, staggered phase).
 - Raised static ### before exit replaced by 2 moving tiles over last gap: mp3 normal, mp4 opposite (phase 0.5).
 - Fog zone shifted to x16-21; level widened to 36 cols (base). Headless bot: ALL PASS (43 levels). Run via `node tools_test/run.mjs tools_test/all_test.ts`.
+- 2026-06: w2-3 speed tuned — first-gap tiles (mp1, mp2) 1.2 (slower), final tiles (mp3, mp4) 2.1 (faster). Bot ALL PASS.
