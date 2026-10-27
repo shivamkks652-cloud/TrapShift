@@ -48,6 +48,8 @@ export interface Particle {
 // This never touches physics/collision — collectSolids() still treats every
 // MovingWall identically regardless of this label. Shared by engine (for sfx
 // cues) and the renderer (for art), so the two stay in sync.
+const EDGE_SLIP_SPEED = 150; // px/s nudge off a tile corner
+
 export type MovingWallKind = "crusher" | "plasmaWall" | "platform";
 
 export function classifyMovingWall(m: MovingWall): MovingWallKind {
@@ -440,6 +442,7 @@ export class GameEngine {
         );
       }
     }
+    if (this.player.onGround) this.edgeSlip(dt);
     if (this.player.onGround) {
       this.lastGroundX = this.player.x;
       this.lastGroundY = this.player.y;
@@ -539,6 +542,22 @@ export class GameEngine {
     }
     this.touchingWallDir = dir;
     if (this.wallPushOffTimer > 0) this.wallPushOffTimer = Math.max(0, this.wallPushOffTimer - dt);
+  }
+
+  // Player balanced on a tile corner (center over the void) slides off instead of floating.
+  private edgeSlip(dt: number) {
+    const p = this.player;
+    const strip = { x: p.x, y: this.gravityDir === 1 ? p.y + p.h : p.y - 2, w: p.w, h: 2 };
+    let minX = Infinity;
+    let maxX = -Infinity;
+    for (const r of this.collectSolids()) {
+      if (!rectsOverlap(strip, r)) continue;
+      minX = Math.min(minX, r.x);
+      maxX = Math.max(maxX, r.x + r.w);
+    }
+    const cx = p.x + p.w / 2;
+    if (minX === Infinity || (cx >= minX && cx <= maxX)) return;
+    this.moveAxis("x", (cx < minX ? -1 : 1) * EDGE_SLIP_SPEED * dt);
   }
 
   private moveAxis(axis: "x" | "y", delta: number) {

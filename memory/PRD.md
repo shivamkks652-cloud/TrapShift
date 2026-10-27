@@ -317,3 +317,6 @@ User spec: file named exactly app-ads.txt, content exactly `google.com, pub-3735
 - Raised static ### before exit replaced by 2 moving tiles over last gap: mp3 normal, mp4 opposite (phase 0.5).
 - Fog zone shifted to x16-21; level widened to 36 cols (base). Headless bot: ALL PASS (43 levels). Run via `node tools_test/run.mjs tools_test/all_test.ts`.
 - 2026-06: w2-3 speed tuned — first-gap tiles (mp1, mp2) 1.2 (slower), final tiles (mp3, mp4) 2.1 (faster). Bot ALL PASS.
+- 2026-06: w2-3 moving tiles now small slabs (w1.5 x h0.5), floor gaps reduced 6→4 (width 34, fog x14-19). w2-7 Voltgrid Gauntlet: small moving slab over the pit inside fog.
+- 2026-06: Engine edge-slip fix — player balanced on a tile corner (hitbox center over void) slides off and falls/dies instead of floating (engine.ts edgeSlip, EDGE_SLIP_SPEED=150). Test: tools_test/edge_test.ts.
+- Note: w1-2 bot test is occasionally flaky in full suite (passes on rerun) — pre-existing.
