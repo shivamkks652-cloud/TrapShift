@@ -311,3 +311,8 @@ User spec: file named exactly app-ads.txt, content exactly `google.com, pub-3735
 - USER ACTION (GitHub Pages): Save to Github → Pages source = branch Trapshift1, folder /docs → file live at https://shivamkks652-cloud.github.io/TrapShift/app-ads.txt
 - IMPORTANT CAVEAT (AdMob crawler rule): AdMob checks the DOMAIN ROOT — for developer website shivamkks652-cloud.github.io it fetches https://shivamkks652-cloud.github.io/app-ads.txt (NOT the /TrapShift/ subpath). User must also create repo `shivamkks652-cloud/shivamkks652-cloud.github.io` with app-ads.txt at its root (same one-line content), enable Pages on it. Then AdMob → Apps → app-ads.txt → "Check for updates".
 - STATUS UPDATE (2026-09-13): /TrapShift/app-ads.txt is LIVE (200 OK, exact content). Domain root shivamkks652-cloud.github.io/app-ads.txt still 404 → this is the "same error" in AdMob. Gave user exact 3-min browser steps to create the `shivamkks652-cloud.github.io` root repo (only user can do this — personal GitHub account). Also verified backend serves /app-ads.txt (added to server.py) and deployment_agent confirmed NO code-side blockers for emergent.host — its nginx default page is a platform-side issue (support ticket path already given earlier).
+
+## 2026-06 — w2-3 "Backwards Alley" layout update
+- First gap (after start) now bridged by 2 moving shuttle tiles (mp1, mp2, speed 1.6, staggered phase).
+- Raised static ### before exit replaced by 2 moving tiles over last gap: mp3 normal, mp4 opposite (phase 0.5).
+- Fog zone shifted to x16-21; level widened to 36 cols (base). Headless bot: ALL PASS (43 levels). Run via `node tools_test/run.mjs tools_test/all_test.ts`.
