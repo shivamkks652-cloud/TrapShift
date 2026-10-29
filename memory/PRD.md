@@ -324,3 +324,4 @@ User spec: file named exactly app-ads.txt, content exactly `google.com, pub-3735
 - 2026-06: Engine — rideMovingPlatform(): player standing on horizontal shuttle is carried. Reverse-fog latch: a direction key held while leaving fog keeps mirrored meaning until released (fixes "left only works with jump" stuck-at-fog-edge bug).
 - Tests: tools_test/reverse_alley_test.ts (15 checks), edge_test.ts, all_test.ts — run via `node tools_test/run.mjs <file>`.
 - 2026-06: w2-3 easier fog entry — reverseZone narrowed to x20 w3 (safe normal tiles 18-19 before fog, 23 after).
+- 2026-06: RetryHint popup (components/RetryHint.tsx) — w2-3 after 10 deaths shows fog+tile timing tip; 'Samajh gaya' dismiss saved in localStorage 'trapshift.hint.w2-3' (never shows again). Add more levels via HINTS map.

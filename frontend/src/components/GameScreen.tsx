@@ -5,6 +5,7 @@ import PauseOverlay from "./PauseOverlay";
 import ResultsOverlay from "./ResultsOverlay";
 import LevelIntro from "./LevelIntro";
 import { DeathOverlay } from "./DeathOverlay";
+import { RetryHint } from "./RetryHint";
 import type { LevelDef } from "@/game/types";
 import { getNextLevelId, getLevelById } from "@/game/levels";
 import { getSettings } from "@/game/storage";
@@ -162,6 +163,7 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
           </div>
         </div>
       )}
+      {phase === "playing" && !deathPrompt && <RetryHint levelId={level.id} deaths={deaths} />}
       {phase === "playing" && deathPrompt && (
         <DeathOverlay
           cause={deathPrompt.cause}
