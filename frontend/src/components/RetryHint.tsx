@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Lightbulb } from "lucide-react";
 
 const HINTS: Record<string, string> = {
-  "w2-3": "Fog mein controls ulte hain — aage jaane ke liye LEFT dabao. Moving tile paas aane ka intezaar karo, phir jump.",
+  "w2-3": "Fog mein RIGHT dabaye rakho, seedha nikal jaoge. Beech mein button chhoda to controls ulte — tab aage ke liye LEFT. Moving tile paas aaye tab jump karo.",
 };
 const key = (id: string) => `trapshift.hint.${id}`;
 

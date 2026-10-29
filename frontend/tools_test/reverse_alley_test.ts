@@ -78,6 +78,16 @@ for (const id of ["mp1", "mp2", "mp3", "mp4"]) {
   log(e2.player.x > x3, "left + jump combined works in fog");
 }
 
+// 4b) holding RIGHT from the safe tiles walks straight into the fog (no bounce back)
+{
+  const z = lv.reverseZones![0];
+  const e = new GameEngine(lv);
+  e.player.x = (z.x - 2) * TILE; e.player.y = footY(e);
+  run(e, 0.05);
+  run(e, 0.5, inp(false, true));
+  log(e.status === "playing" && e.player.x > (z.x + 1) * TILE, `holding right enters fog and keeps going (x=${(e.player.x / TILE).toFixed(2)}, zone ${z.x}-${z.x + z.w})`);
+}
+
 // 5) normal area controls + death/respawn
 {
   const e = new GameEngine(lv);

@@ -152,8 +152,7 @@ export class GameEngine {
   lastDeathCause: string = "";
   movingWallDirState: Record<string, { lastDist: number; dir: 1 | -1 }> = {};
   wasInGravityZone = false;
-  private wasInReverse = false;
-  private revLatch = { left: false, right: false };
+  private keyRev = { left: false, right: false };
   private prevHeld = { left: false, right: false };
   fakePlatformPulses: string[] = [];
   fakePlatformCooldown: Record<string, number> = {};
@@ -358,17 +357,13 @@ export class GameEngine {
     }
     this.wasInGravityZone = nowInGravity;
 
-    // input with reverse zone applied. A key held while LEAVING the fog keeps its mirrored
-    // meaning until released — otherwise it flips at the edge and drags the player back in.
-    if (!input.left) this.revLatch.left = false;
-    if (!input.right) this.revLatch.right = false;
-    if (this.wasInReverse && !inReverse)
-      this.revLatch = { left: input.left && this.prevHeld.left, right: input.right && this.prevHeld.right };
+    // input with reverse zone applied. Each key's mirror state is locked at the moment it is
+    // pressed, so a key held across the fog edge (in or out) never flips mid-run.
+    if (input.left && !this.prevHeld.left) this.keyRev.left = inReverse;
+    if (input.right && !this.prevHeld.right) this.keyRev.right = inReverse;
     this.prevHeld = { left: input.left, right: input.right };
-    if (inReverse) this.revLatch = { left: false, right: false };
-    this.wasInReverse = inReverse;
-    const revL = inReverse || this.revLatch.left;
-    const revR = inReverse || this.revLatch.right;
+    const revL = this.keyRev.left;
+    const revR = this.keyRev.right;
     const left = (input.left && !revL) || (input.right && revR);
     const right = (input.right && !revR) || (input.left && revL);
 
@@ -1141,6 +1136,7 @@ export class GameEngine {
   }
 
   respawn() {
+    this.prevHeld = { left: false, right: false };
     const spawn = this.activeCheckpoint ?? { x: this.level.playerStart.x, y: this.level.playerStart.y };
     this.player.x = spawn.x * TILE;
     this.player.y = spawn.y * TILE;
