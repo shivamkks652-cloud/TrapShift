@@ -84,7 +84,8 @@ export const world2: LevelDef[] = [
     playerStart: { x: 2, y: 5 },
     exit: { x: 40, y: 5 },
     // Fog sirf flat hisse pe (x 18-23). Dono 8-tile roads pe 2-2 patli shuttles lambi travel karti hain.
-    reverseZones: [{ x: 18, y: 0, w: 6, h: 7 }],
+    // Fog ke dono taraf normal safe tiles (18-19 entry, 23 exit) taaki shuttle se utarte hi ulta na ho.
+    reverseZones: [{ x: 20, y: 0, w: 3, h: 7 }],
     movingWalls: [
       { id: "mp1", x: 10, y: 6, w: 1.5, h: 0.5, axis: "x", range: 2.5, speed: 1.2, phase: 0 },
       { id: "mp2", x: 14, y: 6, w: 1.5, h: 0.5, axis: "x", range: 2.5, speed: 1.2, phase: 0 },

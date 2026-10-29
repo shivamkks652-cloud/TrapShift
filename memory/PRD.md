@@ -323,3 +323,4 @@ User spec: file named exactly app-ads.txt, content exactly `google.com, pub-3735
 - 2026-06: w2-3 roads extended +4 (both gaps 8 tiles, width 42, fog x18-23, exit 40), same 4 small slabs with range 2.5.
 - 2026-06: Engine — rideMovingPlatform(): player standing on horizontal shuttle is carried. Reverse-fog latch: a direction key held while leaving fog keeps mirrored meaning until released (fixes "left only works with jump" stuck-at-fog-edge bug).
 - Tests: tools_test/reverse_alley_test.ts (15 checks), edge_test.ts, all_test.ts — run via `node tools_test/run.mjs <file>`.
+- 2026-06: w2-3 easier fog entry — reverseZone narrowed to x20 w3 (safe normal tiles 18-19 before fog, 23 after).

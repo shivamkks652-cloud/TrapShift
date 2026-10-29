@@ -56,7 +56,7 @@ for (const id of ["mp1", "mp2", "mp3", "mp4"]) {
   const x0 = e.player.x;
   run(e, 0.3, inp(true));
   log(e.player.x > x0 + TILE, `in fog: left only (no jump) moves forward (dx=${((e.player.x - x0) / TILE).toFixed(2)})`);
-  run(e, 0.6, inp(true)); // keep holding across the fog exit
+  run(e, 0.2, inp(true)); // keep holding across the fog exit
   log(e.player.x > (z.x + z.w) * TILE, `holding left carries player out of fog without getting stuck (x=${(e.player.x / TILE).toFixed(2)})`);
   run(e, 0.05);
   const x1 = e.player.x;
