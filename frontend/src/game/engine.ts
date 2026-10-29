@@ -152,6 +152,9 @@ export class GameEngine {
   lastDeathCause: string = "";
   movingWallDirState: Record<string, { lastDist: number; dir: 1 | -1 }> = {};
   wasInGravityZone = false;
+  private wasInReverse = false;
+  private revLatch = { left: false, right: false };
+  private prevHeld = { left: false, right: false };
   fakePlatformPulses: string[] = [];
   fakePlatformCooldown: Record<string, number> = {};
   private laserHumOn: Record<string, boolean> = {};
@@ -355,12 +358,19 @@ export class GameEngine {
     }
     this.wasInGravityZone = nowInGravity;
 
-    // input with reverse zone applied
-    let left = input.left;
-    let right = input.right;
-    if (inReverse) {
-      [left, right] = [right, left];
-    }
+    // input with reverse zone applied. A key held while LEAVING the fog keeps its mirrored
+    // meaning until released — otherwise it flips at the edge and drags the player back in.
+    if (!input.left) this.revLatch.left = false;
+    if (!input.right) this.revLatch.right = false;
+    if (this.wasInReverse && !inReverse)
+      this.revLatch = { left: input.left && this.prevHeld.left, right: input.right && this.prevHeld.right };
+    this.prevHeld = { left: input.left, right: input.right };
+    if (inReverse) this.revLatch = { left: false, right: false };
+    this.wasInReverse = inReverse;
+    const revL = inReverse || this.revLatch.left;
+    const revR = inReverse || this.revLatch.right;
+    const left = (input.left && !revL) || (input.right && revR);
+    const right = (input.right && !revR) || (input.left && revL);
 
     // horizontal movement
     const targetDir = (right ? 1 : 0) - (left ? 1 : 0);
@@ -423,6 +433,7 @@ export class GameEngine {
     this.player.vy = Math.max(-MAX_FALL_SPEED, Math.min(MAX_FALL_SPEED, this.player.vy));
 
     // move + collide, axis separated
+    if (this.player.onGround) this.rideMovingPlatform(dt);
     this.moveAxis("x", this.player.vx * dt);
     const wasOnGround = this.player.onGround;
     this.player.onGround = false;
@@ -542,6 +553,19 @@ export class GameEngine {
     }
     this.touchingWallDir = dir;
     if (this.wallPushOffTimer > 0) this.wallPushOffTimer = Math.max(0, this.wallPushOffTimer - dt);
+  }
+
+  // Standing on a horizontal shuttle carries the player with it (uses last frame's position).
+  private rideMovingPlatform(dt: number) {
+    const p = this.player;
+    const strip = { x: p.x, y: this.gravityDir === 1 ? p.y + p.h : p.y - 2, w: p.w, h: 2 };
+    for (const m of this.level.movingWalls ?? []) {
+      if (m.axis !== "x" || classifyMovingWall(m) !== "platform") continue;
+      const prev = this.movingWallRect(m, this.time - dt);
+      if (!rectsOverlap(strip, prev)) continue;
+      this.moveAxis("x", this.movingWallRect(m, this.time).x - prev.x);
+      return;
+    }
   }
 
   // Player balanced on a tile corner (center over the void) slides off instead of floating.

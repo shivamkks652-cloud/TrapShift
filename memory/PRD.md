@@ -320,3 +320,6 @@ User spec: file named exactly app-ads.txt, content exactly `google.com, pub-3735
 - 2026-06: w2-3 moving tiles now small slabs (w1.5 x h0.5), floor gaps reduced 6→4 (width 34, fog x14-19). w2-7 Voltgrid Gauntlet: small moving slab over the pit inside fog.
 - 2026-06: Engine edge-slip fix — player balanced on a tile corner (hitbox center over void) slides off and falls/dies instead of floating (engine.ts edgeSlip, EDGE_SLIP_SPEED=150). Test: tools_test/edge_test.ts.
 - Note: w1-2 bot test is occasionally flaky in full suite (passes on rerun) — pre-existing.
+- 2026-06: w2-3 roads extended +4 (both gaps 8 tiles, width 42, fog x18-23, exit 40), same 4 small slabs with range 2.5.
+- 2026-06: Engine — rideMovingPlatform(): player standing on horizontal shuttle is carried. Reverse-fog latch: a direction key held while leaving fog keeps mirrored meaning until released (fixes "left only works with jump" stuck-at-fog-edge bug).
+- Tests: tools_test/reverse_alley_test.ts (15 checks), edge_test.ts, all_test.ts — run via `node tools_test/run.mjs <file>`.
