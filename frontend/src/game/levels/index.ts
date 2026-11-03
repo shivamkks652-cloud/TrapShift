@@ -4,6 +4,7 @@ import { world3 } from "./world3";
 import { world4 } from "./world4";
 import { world5 } from "./world5";
 import { world6 } from "./world6";
+import { bonusLevels } from "./bonus";
 import { world7 } from "./world7";
 import type { LevelDef, WorldDef } from "../types";
 import { WORLD_THEME } from "../constants";
@@ -124,22 +125,30 @@ function addStrategicDrones(levels: LevelDef[]): LevelDef[] {
 // stretch" jodo — flat floor + ek 2-tile gap (bonus hop) + gap ke upar ek bonus
 // shard. Gameplay lamba hota hai bina difficulty badhaye. Exit naye far end pe
 // shift, parTime +5s.
-const EXT_LEN = 14;
+const EXT_LEN = 24;
 function withExtension(level: LevelDef): LevelDef {
   // Chase-hazard levels (mimic exits pe wait karta hai) ko extend nahi karte —
   // warna pursuit extension me jaakar player ko pakad leti hai. Ye levels apne
   // "one clean run" climax ke liye designed hain.
   if ((level.mimicEnemies?.length ?? 0) > 0) return level;
   const groundRowI = level.rows.length - 1;
-  const oldExitX = level.exit.x;
-  const floor = "######..######"; // exactly EXT_LEN chars, 2-tile gap in the middle
+  // 24 tiles: floor · 2-gap · floor (world hazard) · 4-gap with a shuttle · floor + exit
+  const floor = "######..######....######";
   const rows = level.rows.map((r, i) => r + (i === groundRowI ? floor : ".".repeat(EXT_LEN)));
+  const bx = level.rows[groundRowI].length; // extension start column
+  const w = level.world;
+  const laser = w >= 2 && w !== 5 ? [{ id: `${level.id}-extl`, x: bx + 10, y: groundRowI - 3, h: 3, axis: "vertical" as const, onTime: 1.0, offTime: 1.5 }] : [];
+  const vent = w >= 5 ? [{ id: `${level.id}-extv`, x: bx + 9, y: groundRowI, h: 3, warnTime: 0.6, activeTime: 0.8, cooldownTime: 1.4 }] : [];
   return {
     ...level,
     rows,
-    exit: { x: oldExitX + EXT_LEN - 1, y: level.exit.y },
-    shards: [...(level.shards ?? []), { id: `${level.id}-exts`, x: oldExitX + 6, y: groundRowI - 2 }],
-    parTime: level.parTime + 5,
+    exit: { x: bx + EXT_LEN - 2, y: level.exit.y },
+    shards: [...(level.shards ?? []), { id: `${level.id}-exts`, x: bx + 6, y: groundRowI - 2 }],
+    checkpoints: [...(level.checkpoints ?? []), { id: `${level.id}-extc`, x: bx + 1, y: groundRowI - 1 }],
+    movingWalls: [...(level.movingWalls ?? []), { id: `${level.id}-exts1`, x: bx + 14, y: groundRowI, w: 1.5, h: 0.5, axis: "x", range: 2.5, speed: 1.2 + w * 0.08, phase: 0 }],
+    laserGates: [...(level.laserGates ?? []), ...laser],
+    steamVents: [...(level.steamVents ?? []), ...vent],
+    parTime: level.parTime + 10,
   };
 }
 
@@ -147,13 +156,13 @@ const enhance = (levels: LevelDef[]) =>
   addStrategicDrones(addStrategicCubes(applyRunway(levels).map(withExtension)));
 
 export const WORLDS: WorldDef[] = [
-  { id: 1, name: WORLD_THEME[0].name, colorFrom: WORLD_THEME[0].from, colorTo: WORLD_THEME[0].to, accent: WORLD_THEME[0].accent, levels: enhance(world1) },
-  { id: 2, name: WORLD_THEME[1].name, colorFrom: WORLD_THEME[1].from, colorTo: WORLD_THEME[1].to, accent: WORLD_THEME[1].accent, levels: enhance(world2) },
-  { id: 3, name: WORLD_THEME[2].name, colorFrom: WORLD_THEME[2].from, colorTo: WORLD_THEME[2].to, accent: WORLD_THEME[2].accent, levels: enhance(world3) },
-  { id: 4, name: WORLD_THEME[3].name, colorFrom: WORLD_THEME[3].from, colorTo: WORLD_THEME[3].to, accent: WORLD_THEME[3].accent, levels: enhance(world4) },
-  { id: 5, name: WORLD_THEME[4].name, colorFrom: WORLD_THEME[4].from, colorTo: WORLD_THEME[4].to, accent: WORLD_THEME[4].accent, levels: enhance(world5) },
-  { id: 6, name: WORLD_THEME[5].name, colorFrom: WORLD_THEME[5].from, colorTo: WORLD_THEME[5].to, accent: WORLD_THEME[5].accent, levels: enhance(world6) },
-  { id: 7, name: WORLD_THEME[6].name, colorFrom: WORLD_THEME[6].from, colorTo: WORLD_THEME[6].to, accent: WORLD_THEME[6].accent, levels: enhance(world7) },
+  { id: 1, name: WORLD_THEME[0].name, colorFrom: WORLD_THEME[0].from, colorTo: WORLD_THEME[0].to, accent: WORLD_THEME[0].accent, levels: enhance([...world1, ...bonusLevels[1]]) },
+  { id: 2, name: WORLD_THEME[1].name, colorFrom: WORLD_THEME[1].from, colorTo: WORLD_THEME[1].to, accent: WORLD_THEME[1].accent, levels: enhance([...world2, ...bonusLevels[2]]) },
+  { id: 3, name: WORLD_THEME[2].name, colorFrom: WORLD_THEME[2].from, colorTo: WORLD_THEME[2].to, accent: WORLD_THEME[2].accent, levels: enhance([...world3, ...bonusLevels[3]]) },
+  { id: 4, name: WORLD_THEME[3].name, colorFrom: WORLD_THEME[3].from, colorTo: WORLD_THEME[3].to, accent: WORLD_THEME[3].accent, levels: enhance([...world4, ...bonusLevels[4]]) },
+  { id: 5, name: WORLD_THEME[4].name, colorFrom: WORLD_THEME[4].from, colorTo: WORLD_THEME[4].to, accent: WORLD_THEME[4].accent, levels: enhance([...world5, ...bonusLevels[5]]) },
+  { id: 6, name: WORLD_THEME[5].name, colorFrom: WORLD_THEME[5].from, colorTo: WORLD_THEME[5].to, accent: WORLD_THEME[5].accent, levels: enhance([...world6, ...bonusLevels[6]]) },
+  { id: 7, name: WORLD_THEME[6].name, colorFrom: WORLD_THEME[6].from, colorTo: WORLD_THEME[6].to, accent: WORLD_THEME[6].accent, levels: enhance([...world7, ...bonusLevels[7]]) },
 ];
 
 export const ALL_LEVELS: LevelDef[] = WORLDS.flatMap((w) => w.levels);

@@ -1054,7 +1054,9 @@ export class GameEngine {
   }
 
   private checkExit() {
-    const rect = tileRect(this.level.exit.x, this.level.exit.y);
+    // whole exit column counts — jumping over the flag still finishes the level
+    const rows = this.level.rows.length;
+    const rect = { x: this.level.exit.x * TILE, y: -rows * TILE, w: TILE, h: rows * 3 * TILE };
     if (rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) {
       this.win();
     }

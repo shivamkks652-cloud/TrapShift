@@ -8,6 +8,7 @@ const BONUS_SHARDS_REWARD = 5;
 
 interface Props {
   stars: 1 | 2 | 3;
+  deaths: number;
   timeMs: number;
   shardsCollected: number;
   shardsTotal: number;
@@ -45,7 +46,7 @@ function Confetti({ count }: { count: number }) {
   );
 }
 
-export default function ResultsOverlay({ stars, timeMs, shardsCollected, shardsTotal, parTime, hasNext, onNext, onRetry, onMenu }: Props) {
+export default function ResultsOverlay({ stars, deaths, timeMs, shardsCollected, shardsTotal, parTime, hasNext, onNext, onRetry, onMenu }: Props) {
   const [bonusAvailable, setBonusAvailable] = useState(false);
   const [bonusState, setBonusState] = useState<"idle" | "watching" | "claimed">("idle");
   const isSpeed = parTime !== undefined && timeMs <= parTime * 1000;
@@ -111,6 +112,10 @@ export default function ResultsOverlay({ stars, timeMs, shardsCollected, shardsT
           <span className="font-mono text-white">{formatTime(timeMs)}</span>
         </div>
         <div className="w-full flex justify-between text-sm text-white/70 bg-white/5 rounded-2xl px-4 py-3">
+          <span>Deaths</span>
+          <span data-testid="results-deaths" className="font-mono text-white">{deaths}</span>
+        </div>
+        <div className="w-full flex justify-between text-sm text-white/70 bg-white/5 rounded-2xl px-4 py-3">
           <span>Shards</span>
           <span className="font-mono text-amber-300">
             {shardsCollected}/{shardsTotal}
@@ -136,6 +141,7 @@ export default function ResultsOverlay({ stars, timeMs, shardsCollected, shardsT
         <div className="w-full flex flex-col gap-2 mt-2">
           {hasNext && (
             <button
+              data-testid="results-next-btn"
               onClick={onNext}
               className="flex items-center justify-center gap-2 rounded-2xl py-3 bg-cyan-400 text-[#0b0a1f] font-semibold active:scale-95 transition-transform"
             >
@@ -143,12 +149,14 @@ export default function ResultsOverlay({ stars, timeMs, shardsCollected, shardsT
             </button>
           )}
           <button
+            data-testid="results-replay-btn"
             onClick={onRetry}
             className="flex items-center justify-center gap-2 rounded-2xl py-3 bg-white/10 text-white font-medium active:scale-95 transition-transform"
           >
-            <RotateCcw size={18} /> Retry
+            <RotateCcw size={18} /> Replay
           </button>
           <button
+            data-testid="results-menu-btn"
             onClick={onMenu}
             className="flex items-center justify-center gap-2 rounded-2xl py-3 bg-white/5 text-white/70 font-medium active:scale-95 transition-transform"
           >

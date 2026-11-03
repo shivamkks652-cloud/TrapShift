@@ -128,6 +128,13 @@ export function addBonusShards(amount: number) {
   return data.totalShards;
 }
 
+// 3★: 0-2 deaths & near par · 2★: up to 8 deaths & under 2× par · 1★: any clear
+export function starRating(deaths: number, timeSec: number, parTime: number): 1 | 2 | 3 {
+  if (deaths <= 2 && timeSec <= parTime * 1.2) return 3;
+  if (deaths <= 8 && timeSec <= parTime * 2) return 2;
+  return 1;
+}
+
 export function isLevelUnlocked(levelId: string, allLevelIds: string[]): boolean {
   const idx = allLevelIds.indexOf(levelId);
   if (idx <= 0) return true;

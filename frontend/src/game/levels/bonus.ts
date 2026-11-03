@@ -1,0 +1,93 @@
+import type { LevelDef, MovingWall, LaserGate, SteamVent, ReverseZone, ExplodingPlatform, Checkpoint, Shard, FreezeZone } from "../types";
+
+// Bonus levels (har world ke end me +2) — chhote "segments" jod ke banaye. Ground row = 6.
+// F floor · G gap · SH shuttle gap · L laser · V vent · R reverse fog (safe tiles dono taraf)
+// X collapsing bridge · Z freeze + laser · C checkpoint floor
+type Seg =
+  | ["F" | "G" | "C" | "R" | "X", number]
+  | ["SH", number, number]
+  | ["L" | "V" | "Z", number, number];
+
+function build(id: string, world: number, index: number, name: string, ruleTaught: string, segs: Seg[], parTime: number): LevelDef {
+  let ground = "######"; // start floor
+  const movingWalls: MovingWall[] = [], laserGates: LaserGate[] = [], steamVents: SteamVent[] = [];
+  const reverseZones: ReverseZone[] = [], explodingPlatforms: ExplodingPlatform[] = [], freezeZones: FreezeZone[] = [];
+  const checkpoints: Checkpoint[] = [], shards: Shard[] = [];
+  let n = 0;
+  for (const s of segs) {
+    const x = ground.length;
+    const k = `${id}-${n++}`;
+    switch (s[0]) {
+      case "F": ground += "#".repeat(s[1]); break;
+      case "G": ground += ".".repeat(s[1]); shards.push({ id: k, x: x + Math.floor(s[1] / 2), y: 4 }); break;
+      case "C": ground += "#".repeat(s[1]); checkpoints.push({ id: k, x: x + 1, y: 5 }); break;
+      case "SH":
+        ground += ".".repeat(s[1]);
+        movingWalls.push({ id: k, x, y: 6, w: 1.5, h: 0.5, axis: "x", range: s[1] - 1.5, speed: s[2], phase: 0 });
+        break;
+      case "L":
+        ground += "#".repeat(5);
+        laserGates.push({ id: k, x: x + 2, y: 3, h: 3, axis: "vertical", onTime: s[1], offTime: s[2] });
+        break;
+      case "V":
+        ground += "#".repeat(5);
+        steamVents.push({ id: k, x: x + 2, y: 6, h: 3, warnTime: 0.6, activeTime: s[1], cooldownTime: s[2] });
+        break;
+      case "Z":
+        ground += "#".repeat(6);
+        freezeZones.push({ x: x + 1, y: 2, w: 2, h: 4 });
+        laserGates.push({ id: k, x: x + 3, y: 3, h: 3, axis: "vertical", onTime: s[1], offTime: s[2] });
+        break;
+      case "R":
+        ground += "#".repeat(s[1] + 4);
+        reverseZones.push({ x: x + 2, y: 0, w: s[1], h: 7 });
+        shards.push({ id: k, x: x + 2 + Math.floor(s[1] / 2), y: 5 });
+        break;
+      case "X":
+        ground += ".".repeat(s[1]);
+        for (let i = 0; i + 2 <= s[1]; i += 2) explodingPlatforms.push({ id: `${k}-${i}`, x: x + i, y: 6, w: 2, delay: 0.6, respawn: 2.5 });
+        break;
+    }
+  }
+  ground += "######";
+  const empty = ".".repeat(ground.length);
+  return {
+    id, world, index, name, ruleTaught,
+    rows: [empty, empty, empty, empty, empty, empty, ground],
+    playerStart: { x: 2, y: 5 },
+    exit: { x: ground.length - 2, y: 5 },
+    checkpoints, shards: shards.slice(0, 3), movingWalls, laserGates, steamVents, reverseZones, explodingPlatforms, freezeZones,
+    parTime,
+  };
+}
+
+export const bonusLevels: Record<number, LevelDef[]> = {
+  1: [
+    build("w1-7", 1, 7, "Long Haul", "A longer run — keep your rhythm over every gap.", [["G", 2], ["F", 4], ["G", 3], ["C", 4], ["SH", 4, 1.2], ["F", 4], ["G", 3], ["F", 3]], 24),
+    build("w1-8", 1, 8, "Beam Walk", "Shuttles and a beam — wait, ride, then dash.", [["SH", 4, 1.1], ["F", 3], ["L", 1.0, 1.6], ["C", 4], ["G", 3], ["SH", 5, 1.3], ["F", 3]], 26),
+  ],
+  2: [
+    build("w2-8", 2, 8, "Mirror Shuttle", "Ride the shuttle into the fog — hold your key through it.", [["SH", 4, 1.3], ["R", 3], ["C", 4], ["L", 1.0, 1.4], ["SH", 5, 1.5], ["F", 3]], 28),
+    build("w2-9", 2, 9, "Collapse Mirror", "Falling slabs, then mirror fog — never stop.", [["X", 4], ["F", 3], ["R", 4], ["C", 4], ["SH", 5, 1.6], ["L", 0.9, 1.3], ["G", 3], ["F", 3]], 32),
+  ],
+  3: [
+    build("w3-7", 3, 7, "Frozen Relay", "Freeze the beam, then ride the shuttle.", [["Z", 1.2, 1.2], ["SH", 4, 1.4], ["C", 4], ["X", 4], ["F", 3], ["G", 3], ["F", 3]], 28),
+    build("w3-8", 3, 8, "Cold Mirror", "Fog, freeze and falling slabs — one clean line.", [["R", 3], ["G", 3], ["C", 4], ["Z", 1.2, 1.1], ["X", 6], ["F", 3], ["SH", 5, 1.6], ["F", 3]], 32),
+  ],
+  4: [
+    build("w4-7", 4, 7, "Double Beat", "Two beams on different beats — then the long shuttle.", [["L", 1.0, 1.4], ["F", 2], ["L", 1.2, 1.2], ["C", 4], ["SH", 6, 1.4], ["G", 3], ["F", 3]], 30),
+    build("w4-8", 4, 8, "Orbit Lane", "Mirror fog between beams — think before each step.", [["G", 3], ["L", 1.0, 1.3], ["R", 4], ["C", 4], ["SH", 5, 1.7], ["L", 0.9, 1.3], ["F", 3]], 32),
+  ],
+  5: [
+    build("w5-7", 5, 7, "Steam Ferry", "A jet before every shuttle — wait out the hiss.", [["V", 0.8, 1.4], ["SH", 5, 1.4], ["C", 4], ["V", 0.9, 1.2], ["G", 3], ["SH", 5, 1.6], ["F", 3]], 32),
+    build("w5-8", 5, 8, "Pressure Mirror", "Jets, fog and a beam — three rhythms, one run.", [["V", 0.8, 1.3], ["R", 3], ["C", 4], ["L", 1.0, 1.3], ["X", 4], ["V", 0.9, 1.2], ["F", 3]], 34),
+  ],
+  6: [
+    build("w6-7", 6, 7, "Firewall Ferry", "Beam, jet and shuttle — the corridor never rests.", [["L", 1.0, 1.3], ["V", 0.8, 1.3], ["C", 4], ["SH", 6, 1.6], ["X", 4], ["F", 3]], 34),
+    build("w6-8", 6, 8, "Kernel Panic", "Every trick in the grid, back to back.", [["Z", 1.1, 1.1], ["R", 4], ["C", 4], ["V", 0.9, 1.2], ["SH", 6, 1.7], ["L", 0.9, 1.2], ["G", 3], ["F", 3]], 36),
+  ],
+  7: [
+    build("w7-7", 7, 7, "Rift Runner", "Fast shuttles and mirror fog — adapt without stopping.", [["SH", 5, 1.8], ["R", 4], ["C", 4], ["V", 0.9, 1.1], ["L", 0.9, 1.2], ["X", 6], ["F", 3]], 36),
+    build("w7-8", 7, 8, "Final Shift", "The last run — every mechanic, highest pace.", [["L", 0.9, 1.2], ["SH", 6, 1.9], ["C", 4], ["R", 4], ["Z", 1.1, 1.0], ["V", 0.9, 1.1], ["C", 4], ["X", 6], ["SH", 6, 2.0], ["F", 3]], 42),
+  ],
+};

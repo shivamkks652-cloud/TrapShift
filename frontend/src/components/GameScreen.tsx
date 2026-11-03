@@ -199,6 +199,7 @@ export default function GameScreen({ level, onExit, onGoToLevel }: Props) {
       {phase === "results" && result && (
         <ResultsOverlay
           stars={result.stars}
+          deaths={deaths}
           timeMs={result.timeMs}
           shardsCollected={result.shardsCollected}
           shardsTotal={result.shardsTotal}

@@ -4,7 +4,7 @@ import { render } from "@/game/render";
 import { TILE, type LevelDef } from "@/game/types";
 import { getWorldOfLevel } from "@/game/levels";
 import { RESTART_DELAY_MS } from "@/game/constants";
-import { loadSave, recordLevelResult, getSettings } from "@/game/storage";
+import { loadSave, recordLevelResult, getSettings, starRating } from "@/game/storage";
 import { resumeAudio, stopAllHums } from "@/game/audio";
 import { uiPress } from "@/game/haptics";
 
@@ -84,9 +84,7 @@ export default function GameCanvas({
       } else if (e.type === "win") {
         const shardsTotal = level.shards?.length ?? 0;
         const shardsCollected = eng.shardsCollected.size;
-        let stars: 1 | 2 | 3 = 1;
-        if (eng.time <= level.parTime && shardsCollected === shardsTotal) stars = 3;
-        else if (eng.time <= level.parTime * 1.4 || shardsCollected >= Math.ceil(shardsTotal / 2)) stars = 2;
+        const stars = starRating(eng.deaths, eng.time, level.parTime);
         recordLevelResult(level.id, Math.round(eng.time * 1000), shardsCollected, shardsTotal, stars);
         onWin({ timeMs: Math.round(eng.time * 1000), shardsCollected, shardsTotal, stars });
         onEvent?.("win");
