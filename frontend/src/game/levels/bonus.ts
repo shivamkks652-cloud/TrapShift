@@ -91,3 +91,76 @@ export const bonusLevels: Record<number, LevelDef[]> = {
     build("w7-8", 7, 8, "Final Shift", "The last run — every mechanic, highest pace.", [["L", 0.9, 1.2], ["SH", 6, 1.9], ["C", 4], ["R", 4], ["Z", 1.1, 1.0], ["V", 0.9, 1.1], ["C", 4], ["X", 6], ["SH", 6, 2.0], ["F", 3]], 42),
   ],
 };
+
+// ---- Procedural mix: har level me kuch aasaan aur kuch achanak mushkil segments ----
+function rng(seed: string) {
+  let h = 2166136261;
+  for (const c of seed) h = Math.imul(h ^ c.charCodeAt(0), 16777619);
+  return () => {
+    h = Math.imul(h ^ (h >>> 15), 2246822507) ^ Math.imul(h ^ (h >>> 13), 3266489909);
+    return ((h >>> 0) % 10000) / 10000;
+  };
+}
+const segW = (s: Seg) => (s[0] === "L" || s[0] === "V" ? 5 : s[0] === "Z" ? 6 : s[0] === "R" ? (s[1] as number) + 4 : (s[1] as number));
+
+export function mixedSegs(seed: string, world: number, minTiles: number): Seg[] {
+  const r = rng(seed);
+  const pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
+  const easy: Seg[] = [["F", 3], ["G", 2], ["G", 3], ["SH", 4, 1.1], ["F", 4], ["X", 2]];
+  const hard: Seg[] = [["SH", 5, 1.25 + world * 0.04], ["L", 0.9, 1.3], ["V", 0.9, 1.2], ["R", 4], ["X", 6], ["Z", 1.1, 1.1], ["SH", 4, 1.7]];
+  const out: Seg[] = [];
+  let w = 0;
+  while (w < minTiles) {
+    const s = out.length % 6 === 4 ? (["C", 4] as Seg) : r() < 0.3 + world * 0.05 ? pick(hard) : pick(easy);
+    out.push(s, ["F", 2]);
+    w += segW(s) + 2;
+  }
+  return out;
+}
+
+const shiftX = <T extends { x: number }>(a: T[] | undefined, dx: number) => (a ?? []).map((o) => ({ ...o, x: o.x + dx }));
+
+// Level ke end me (exit se pehle) utna hi lamba naya mixed stretch jodta hai → ~2× length.
+export function extendWithMix(level: LevelDef): LevelDef {
+  const gi = level.rows.length - 1;
+  const bx = level.rows[gi].length;
+  const segs = mixedSegs(level.id, level.world, Math.max(24, bx - 4));
+  const part = build(`${level.id}-m`, level.world, 0, "", "", segs, 0);
+  const pg = part.rows[6];
+  const rows = level.rows.map((row, i) => row + (i === gi ? pg : ".".repeat(pg.length)));
+  const dy = gi - 6; // align part ground row to level ground row
+  const shiftY = <T extends { y: number }>(a: T[]) => a.map((o) => ({ ...o, y: o.y + dy }));
+  return {
+    ...level,
+    rows,
+    exit: { x: bx + part.exit.x, y: part.exit.y + dy },
+    checkpoints: [...(level.checkpoints ?? []), ...shiftY(shiftX(part.checkpoints, bx))],
+    shards: [...(level.shards ?? []), ...shiftY(shiftX(part.shards, bx))],
+    movingWalls: [...(level.movingWalls ?? []), ...shiftY(shiftX(part.movingWalls, bx))],
+    laserGates: [...(level.laserGates ?? []), ...shiftY(shiftX(part.laserGates, bx))],
+    steamVents: [...(level.steamVents ?? []), ...shiftY(shiftX(part.steamVents, bx))],
+    reverseZones: [...(level.reverseZones ?? []), ...shiftY(shiftX(part.reverseZones, bx))],
+    explodingPlatforms: [...(level.explodingPlatforms ?? []), ...shiftY(shiftX(part.explodingPlatforms, bx))],
+    freezeZones: [...(level.freezeZones ?? []), ...shiftY(shiftX(part.freezeZones, bx))],
+    parTime: level.parTime + Math.round(pg.length * 0.3),
+  };
+}
+
+const EXTRA_NAMES: Record<number, [string, string][]> = {
+  1: [["Foundry Sprint", "Mixed run — easy hops, then a surprise."], ["Forge Finale", "The foundry's last test — stay sharp."]],
+  2: [["Voltgrid Marathon", "Long grid run — anything can show up next."]],
+  3: [["Glacier Run", "Ice, fog and slabs in a random order."], ["Frostbite", "The cold gets meaner the further you go."]],
+  4: [["Event Horizon", "Beams and fog with no warning."], ["Singularity", "The core's final pull."]],
+  5: [["Magma Mile", "Jets hide between easy steps."], ["Reactor Core", "Every jet at full pressure."]],
+  6: [["Packet Storm", "The grid throws random traps."], ["Root Access", "Break through the final firewall."]],
+  7: [["Rift Storm", "Chaos everywhere — read fast."], ["TrapShift", "The ultimate shift."]],
+};
+for (const [w, names] of Object.entries(EXTRA_NAMES)) {
+  const world = Number(w);
+  const list = bonusLevels[world];
+  names.forEach(([name, rule], i) => {
+    const index = (world === 2 ? 9 : 8) + i + 1;
+    const id = `w${world}-${index}`;
+    list.push(build(id, world, index, name, rule, mixedSegs(id, world, 40 + world * 4), 30 + world * 3));
+  });
+}

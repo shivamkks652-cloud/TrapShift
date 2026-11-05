@@ -647,7 +647,6 @@ export class GameEngine {
       const r = this.explodingRect(e);
       if (r) rects.push(r);
     }
-    for (const r of this.level.rotatingPlatforms ?? []) rects.push(this.rotatingRect(r, this.time));
 
     // dark zone bridge tiles only solid within torch radius of player (always-lit halo)
     for (const dz of this.level.darkZones ?? []) {
@@ -1014,6 +1013,14 @@ export class GameEngine {
   }
 
   private checkDrones() {
+    // spinning wheel arms are lethal on touch (not rideable)
+    const pr = { x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h };
+    for (const r of this.level.rotatingPlatforms ?? []) {
+      if (rectsOverlap(pr, this.rotatingRect(r, this.time))) {
+        this.die("wheel");
+        return;
+      }
+    }
     for (const d of this.level.patrolDrones ?? []) {
       const rect = this.droneRect(d);
       if (rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) {

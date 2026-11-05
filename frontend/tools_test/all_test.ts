@@ -53,7 +53,7 @@ for (const lv of levels) {
     e.time = Math.random() * 2.5;
     let deadFor = 0, stuckX = e.player.x, stuckT = 0;
     const dt = 1 / 120;
-    for (let step = 0; step < 120 * 32; step++) {
+    for (let step = 0; step < 120 * 200; step++) {
       if (e.status === "won") { solved = true; break; }
       if (e.status === "dead") { deadFor += dt; if (deadFor > 0.15) { e.respawn(); deadFor = 0; } continue; }
       maxX = Math.max(maxX, e.player.x);

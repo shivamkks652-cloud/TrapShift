@@ -4,7 +4,7 @@ import { world3 } from "./world3";
 import { world4 } from "./world4";
 import { world5 } from "./world5";
 import { world6 } from "./world6";
-import { bonusLevels } from "./bonus";
+import { bonusLevels, extendWithMix } from "./bonus";
 import { world7 } from "./world7";
 import type { LevelDef, WorldDef } from "../types";
 import { WORLD_THEME } from "../constants";
@@ -153,7 +153,7 @@ function withExtension(level: LevelDef): LevelDef {
 }
 
 const enhance = (levels: LevelDef[]) =>
-  addStrategicDrones(addStrategicCubes(applyRunway(levels).map(withExtension)));
+  addStrategicDrones(addStrategicCubes(applyRunway(levels).map(withExtension).map((l) => (l.mimicEnemies?.length ? l : extendWithMix(l)))));
 
 export const WORLDS: WorldDef[] = [
   { id: 1, name: WORLD_THEME[0].name, colorFrom: WORLD_THEME[0].from, colorTo: WORLD_THEME[0].to, accent: WORLD_THEME[0].accent, levels: enhance([...world1, ...bonusLevels[1]]) },
