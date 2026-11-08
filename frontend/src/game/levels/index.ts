@@ -153,7 +153,7 @@ function withExtension(level: LevelDef): LevelDef {
 }
 
 const enhance = (levels: LevelDef[]) =>
-  addStrategicDrones(addStrategicCubes(applyRunway(levels).map(withExtension).map((l) => (l.mimicEnemies?.some((m) => !m.id.startsWith(l.id)) ? l : extendWithMix(l)))));
+  randomBurst(addStrategicDrones(addStrategicCubes(applyRunway(levels).map(withExtension).map((l) => (l.mimicEnemies?.some((m) => !m.id.startsWith(l.id)) ? l : extendWithMix(l))))));
 
 export const WORLDS: WorldDef[] = [
   { id: 1, name: WORLD_THEME[0].name, colorFrom: WORLD_THEME[0].from, colorTo: WORLD_THEME[0].to, accent: WORLD_THEME[0].accent, levels: enhance([...world1, ...bonusLevels[1]]) },
@@ -180,4 +180,20 @@ export function getNextLevelId(id: string): string | null {
 
 export function getWorldOfLevel(id: string): WorldDef | undefined {
   return WORLDS.find((w) => w.levels.some((l) => l.id === id));
+}
+
+// Surprise: har bursting tile randomly "medium" ya "fast" phootta hai (id se fixed, har run same).
+function randomBurst(levels: LevelDef[]): LevelDef[] {
+  return levels.map((l) =>
+    l.explodingPlatforms?.length
+      ? {
+          ...l,
+          explodingPlatforms: l.explodingPlatforms.map((p) => {
+            let h = 0;
+            for (const c of p.id + l.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+            return { ...p, delay: h % 2 ? 0.55 : 0.3 };
+          }),
+        }
+      : l,
+  );
 }
