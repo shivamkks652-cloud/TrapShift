@@ -153,7 +153,7 @@ function withExtension(level: LevelDef): LevelDef {
 }
 
 const enhance = (levels: LevelDef[]) =>
-  addStrategicDrones(addStrategicCubes(applyRunway(levels).map(withExtension).map((l) => (l.mimicEnemies?.length ? l : extendWithMix(l)))));
+  addStrategicDrones(addStrategicCubes(applyRunway(levels).map(withExtension).map((l) => (l.mimicEnemies?.some((m) => !m.id.startsWith(l.id)) ? l : extendWithMix(l)))));
 
 export const WORLDS: WorldDef[] = [
   { id: 1, name: WORLD_THEME[0].name, colorFrom: WORLD_THEME[0].from, colorTo: WORLD_THEME[0].to, accent: WORLD_THEME[0].accent, levels: enhance([...world1, ...bonusLevels[1]]) },
