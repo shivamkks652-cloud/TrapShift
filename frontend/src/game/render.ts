@@ -223,6 +223,13 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
     const warnWindow = 0.35;
     const warning = !st?.on && l.offTime - tOff < warnWindow && l.offTime - tOff > 0;
     if (l.axis === "vertical") {
+      // icy slick floor strip around the gate
+      ctx.save();
+      ctx.fillStyle = "rgba(140,220,255,0.35)";
+      ctx.shadowColor = "#8cdcff";
+      ctx.shadowBlur = 10;
+      ctx.fillRect((l.x - 2) * TILE, (l.y + l.h) * TILE, TILE * 5, TILE * 0.18);
+      ctx.restore();
       drawLaserGate(ctx, l, !!st?.on, warning, dangerColor, frame);
     } else {
       drawElectricGate(ctx, l, !!st?.on, warning, dangerColor, frame);
@@ -888,9 +895,9 @@ function drawLaserGate(
   dangerColor: string,
   frame: number,
 ) {
-  const x = l.x * TILE + TILE * 0.4;
+  const x = l.x * TILE + TILE * 0.2;
   const y = l.y * TILE;
-  const w = TILE * 0.2;
+  const w = TILE * 0.6;
   const h = l.h * TILE;
   ctx.save();
   if (on) {

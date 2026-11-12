@@ -369,8 +369,11 @@ export class GameEngine {
 
     // horizontal movement
     const targetDir = (right ? 1 : 0) - (left ? 1 : 0);
-    const accel = (this.player.onGround ? MOVE_ACCEL : MOVE_ACCEL * AIR_CONTROL) * this.sensitivity;
-    const decel = (this.player.onGround ? MOVE_DECEL : MOVE_DECEL * AIR_CONTROL) * this.sensitivity;
+    // slippery floor within ~2 tiles of any vertical laser gate
+    const pcx = (this.player.x + this.player.w / 2) / TILE;
+    const slick = this.player.onGround && (this.level.laserGates ?? []).some((l) => l.axis === "vertical" && Math.abs(pcx - (l.x + 0.5)) <= 2.5);
+    const accel = (this.player.onGround ? MOVE_ACCEL * (slick ? 0.45 : 1) : MOVE_ACCEL * AIR_CONTROL) * this.sensitivity;
+    const decel = (this.player.onGround ? MOVE_DECEL * (slick ? 0.08 : 1) : MOVE_DECEL * AIR_CONTROL) * this.sensitivity;
     if (targetDir !== 0) {
       this.player.vx += targetDir * accel * dt;
       this.player.vx = Math.max(-MAX_RUN_SPEED, Math.min(MAX_RUN_SPEED, this.player.vx));
@@ -792,10 +795,11 @@ export class GameEngine {
       if (!st.on) continue;
       const rect: Rect =
         l.axis === "vertical"
-          ? { x: l.x * TILE + TILE * 0.4, y: l.y * TILE, w: TILE * 0.2, h: l.h * TILE }
-          : { x: l.x * TILE, y: l.y * TILE + TILE * 0.4, w: l.h * TILE, h: TILE * 0.2 };
+          ? { x: l.x * TILE + TILE * 0.2, y: l.y * TILE, w: TILE * 0.6, h: l.h * TILE }
+          : { x: l.x * TILE, y: l.y * TILE + TILE * 0.2, w: l.h * TILE, h: TILE * 0.6 };
       if (rectsOverlap({ x: this.player.x, y: this.player.y, w: this.player.w, h: this.player.h }, rect)) {
         this.die(l.axis === "horizontal" ? "laser-horizontal" : "laser-vertical");
+        this.cameraShake = 2.8 * this.shakeMultiplier; // strong electric impact
         return;
       }
     }

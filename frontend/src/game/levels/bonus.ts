@@ -46,7 +46,7 @@ function build(id: string, world: number, index: number, name: string, ruleTaugh
         break;
       case "D": // flying drone sweeping over a floor stretch (don't jump into it)
         ground += "#".repeat(s[1]);
-        patrolDrones.push({ id: k, x, y: 3, range: s[1] - 1, speed: 1.3, phase: (n % 4) / 4 });
+        patrolDrones.push({ id: k, x, y: 3, range: s[1] - 1, speed: n % 2 ? 1.3 : 2.1, phase: (n % 4) / 4 }); // slow/fast variants
         break;
       case "M": // chasing robot that lunges when you get close
         ground += "#".repeat(s[1]);
@@ -115,8 +115,8 @@ const segW = (s: Seg) => (s[0] === "L" || s[0] === "V" ? 5 : s[0] === "Z" ? 6 : 
 export function mixedSegs(seed: string, world: number, minTiles: number): Seg[] {
   const r = rng(seed);
   const pick = <T,>(a: T[]) => a[Math.floor(r() * a.length)];
-  const easy: Seg[] = [["F", 3], ["G", 2], ["G", 3], ["SH", 4, 1.1], ["F", 4], ["X", 2], ["D", 5]];
-  const hard: Seg[] = [["SH", 5, 1.25 + world * 0.04], ["L", 0.9, 1.3], ["V", 0.9, 1.2], ["R", 4], ["X", 6], ["Z", 1.1, 1.1], ["SH", 4, 1.7], ["M", 6], ["D", 7]];
+  const easy: Seg[] = [["F", 3], ["G", 2], ["G", 3], ["SH", 4, 1.1], ["F", 4], ["X", 2], ["D", 5], ["D", 6], ["M", 5]];
+  const hard: Seg[] = [["SH", 5, 1.25 + world * 0.04], ["L", 0.9, 1.3], ["V", 0.9, 1.2], ["R", 4], ["X", 6], ["Z", 1.1, 1.1], ["SH", 4, 1.7], ["M", 6], ["D", 7], ["M", 5], ["D", 8]];
   const out: Seg[] = [["D", 5], ["F", 2]]; // har stretch me kam se kam ek drone
   let w = 7;
   while (w < minTiles) {

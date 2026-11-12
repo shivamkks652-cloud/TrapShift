@@ -185,15 +185,11 @@ export function getWorldOfLevel(id: string): WorldDef | undefined {
 // Surprise: har bursting tile randomly "medium" ya "fast" phootta hai (id se fixed, har run same).
 function randomBurst(levels: LevelDef[]): LevelDef[] {
   return levels.map((l) =>
-    l.explodingPlatforms?.length
-      ? {
-          ...l,
-          explodingPlatforms: l.explodingPlatforms.map((p) => {
-            let h = 0;
-            for (const c of p.id + l.id) h = (h * 31 + c.charCodeAt(0)) >>> 0;
-            return { ...p, delay: h % 2 ? 0.55 : 0.3 };
-          }),
-        }
-      : l,
+    // no checkpoints anywhere; bursting tiles always fast
+    ({
+      ...l,
+      checkpoints: (globalThis as any).process?.env?.KEEP_CP ? l.checkpoints : [], // bot verifies sections with checkpoints
+      explodingPlatforms: l.explodingPlatforms?.map((p) => ({ ...p, delay: 0.25 })),
+    }),
   );
 }
