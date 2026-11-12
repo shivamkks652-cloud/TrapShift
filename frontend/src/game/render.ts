@@ -574,16 +574,10 @@ export function render(ctx: CanvasRenderingContext2D, engine: GameEngine, opts: 
   const h = engine.player.h * 1.55;
   const hOffset = -engine.player.h * 0.5 - (h - engine.player.h) * 0.72;
   if (!isDead && playerSprite.complete && playerSprite.naturalWidth > 0) {
-    ctx.drawImage(playerSprite, col * CELL_W, row * CELL_H, CELL_W, CELL_H, -w * 0.85, hOffset, w * 1.7, h);
-    if (skin.id !== "default") {
-      ctx.save();
-      ctx.globalCompositeOperation = "source-atop";
-      ctx.globalAlpha = 0.38;
-      ctx.fillStyle = skin.primary;
-      ctx.fillRect(-w * 0.85, hOffset, w * 1.7, h);
-      ctx.globalAlpha = 1;
-      ctx.restore();
-    }
+    const src: CanvasImageSource = skin.id === "default" ? playerSprite : skinnedCell(skin.id, skin.primary, row, col);
+    const sx = skin.id === "default" ? col * CELL_W : 0;
+    const sy = skin.id === "default" ? row * CELL_H : 0;
+    ctx.drawImage(src, sx, sy, CELL_W, CELL_H, -w * 0.85, hOffset, w * 1.7, h);
   } else if (!isDead) {
     // sprite still loading — fall back to the simple silhouette so the player is never invisible
     ctx.fillStyle = skin.primary;
@@ -885,6 +879,26 @@ function drawFallingPlatform(
     }
   }
   ctx.restore();
+}
+
+// Skin = recolor only the robot's own pixels (offscreen), never the background around it.
+const skinCache = new Map<string, HTMLCanvasElement>();
+function skinnedCell(id: string, color: string, row: number, col: number): HTMLCanvasElement {
+  const key = `${id}-${row}-${col}`;
+  let c = skinCache.get(key);
+  if (c) return c;
+  c = document.createElement("canvas");
+  c.width = CELL_W;
+  c.height = CELL_H;
+  const g = c.getContext("2d")!;
+  g.drawImage(playerSprite, col * CELL_W, row * CELL_H, CELL_W, CELL_H, 0, 0, CELL_W, CELL_H);
+  g.globalCompositeOperation = "color";
+  g.fillStyle = color;
+  g.fillRect(0, 0, CELL_W, CELL_H);
+  g.globalCompositeOperation = "destination-in";
+  g.drawImage(playerSprite, col * CELL_W, row * CELL_H, CELL_W, CELL_H, 0, 0, CELL_W, CELL_H);
+  skinCache.set(key, c);
+  return c;
 }
 
 function drawLaserGate(
